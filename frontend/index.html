@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graficadora de Transformación de Funciones · Precálculo</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <!-- Chart.js: librería de graficación en el navegador (solo dibuja; el cálculo es Python) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="cabecera">
+    <h1>Graficadora de Transformación de Funciones</h1>
+    <p class="subtitulo">
+      g(x) = a · f( b (x − c) ) + d &nbsp;·&nbsp; Precálculo · Proyecto Final
+    </p>
+  </header>
+
+  <main class="contenedor">
+    <!-- ============ PANEL DE CONTROLES ============ -->
+    <section class="panel controles" aria-label="Controles">
+      <h2>1 · Función base</h2>
+      <label for="funcion">Elige una función madre f(x):</label>
+      <select id="funcion"></select>
+
+      <div id="caja-base" class="oculto">
+        <label for="base_exp">Base de la exponencial (a &gt; 0, a ≠ 1):</label>
+        <input type="number" id="base_exp" value="2" step="0.1">
+      </div>
+
+      <h2>2 · Parámetros de transformación</h2>
+      <div class="rejilla-params">
+        <div class="campo">
+          <label for="a">a <small>(vertical)</small></label>
+          <input type="number" id="a" value="1" step="0.5">
+        </div>
+        <div class="campo">
+          <label for="b">b <small>(horizontal)</small></label>
+          <input type="number" id="b" value="1" step="0.5">
+        </div>
+        <div class="campo">
+          <label for="c">c <small>(desp. horizontal)</small></label>
+          <input type="number" id="c" value="0" step="0.5">
+        </div>
+        <div class="campo">
+          <label for="d">d <small>(desp. vertical)</small></label>
+          <input type="number" id="d" value="0" step="0.5">
+        </div>
+      </div>
+
+      <h2>3 · Intervalo</h2>
+      <div class="rejilla-params">
+        <div class="campo">
+          <label for="x_min">x mínimo</label>
+          <input type="number" id="x_min" value="-10" step="1">
+        </div>
+        <div class="campo">
+          <label for="x_max">x máximo</label>
+          <input type="number" id="x_max" value="10" step="1">
+        </div>
+        <div class="campo">
+          <label for="puntos_tabla">Puntos tabla</label>
+          <input type="number" id="puntos_tabla" value="9" min="5" step="1">
+        </div>
+      </div>
+
+      <div class="acciones">
+        <button id="btn-graficar" class="primario">Graficar transformación</button>
+        <button id="btn-reset" class="secundario">Restablecer</button>
+      </div>
+
+      <p id="mensaje-error" class="error oculto" role="alert"></p>
+    </section>
+
+    <!-- ============ GRÁFICA ============ -->
+    <section class="panel grafica" aria-label="Gráfica">
+      <h2>Plano cartesiano</h2>
+      <div class="formulas">
+        <span id="etq-f" class="formula-f">f(x)</span>
+        <span id="etq-g" class="formula-g">g(x)</span>
+      </div>
+      <canvas id="lienzo"></canvas>
+    </section>
+  </main>
+
+  <!-- ============ RESUMEN INTERPRETATIVO ============ -->
+  <section class="panel resumen-wrap" aria-label="Resumen">
+    <h2>Resumen interpretativo</h2>
+    <ul id="resumen" class="resumen"></ul>
+  </section>
+
+  <!-- ============ TABLA DE PUNTOS ============ -->
+  <section class="panel tabla-wrap" aria-label="Tabla de puntos">
+    <h2>Tabla de puntos clave</h2>
+    <table id="tabla-puntos" class="tabla">
+      <thead>
+        <tr><th>x</th><th>f(x)</th><th>g(x)</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="nota">Las celdas con “—” indican puntos fuera del dominio de la función.</p>
+  </section>
+
+  <footer class="pie">
+    Backend en <strong>Python (Flask)</strong> · Frontend en <strong>HTML / CSS / JavaScript</strong>
+  </footer>
+
+  <script src="js/graficadora.js"></script>
+</body>
+</html>

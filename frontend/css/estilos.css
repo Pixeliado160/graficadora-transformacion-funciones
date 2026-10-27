@@ -1,0 +1,197 @@
+/* ==========================================================================
+   estilos.css — Apariencia de la graficadora
+   Paleta oscura con acentos; diseño limpio y legible para exposición.
+   ========================================================================== */
+
+:root {
+  --fondo: #0f1221;
+  --panel: #191d33;
+  --panel-borde: #2a3052;
+  --texto: #e8ebf7;
+  --texto-tenue: #9aa3c7;
+  --acento: #6c8cff;      /* azul: g(x) transformada */
+  --acento-2: #ff9f6c;    /* naranja: f(x) original */
+  --ok: #4ad99a;
+  --error-bg: #3a1726;
+  --error-fg: #ff8aa6;
+  --sombra: 0 10px 30px rgba(0, 0, 0, .35);
+  --radio: 14px;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #1b2246 0%, transparent 60%),
+    var(--fondo);
+  color: var(--texto);
+  min-height: 100vh;
+}
+
+/* ---------- Cabecera ---------- */
+.cabecera {
+  text-align: center;
+  padding: 28px 16px 8px;
+}
+.cabecera h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2.1rem);
+  letter-spacing: .3px;
+}
+.subtitulo {
+  color: var(--texto-tenue);
+  margin: 6px 0 0;
+  font-size: .95rem;
+}
+
+/* ---------- Disposición principal ---------- */
+.contenedor {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 18px;
+  max-width: 1200px;
+  margin: 18px auto;
+  padding: 0 16px;
+}
+@media (max-width: 880px) {
+  .contenedor { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-borde);
+  border-radius: var(--radio);
+  padding: 18px;
+  box-shadow: var(--sombra);
+}
+.panel h2 {
+  font-size: 1rem;
+  margin: 0 0 10px;
+  color: var(--acento);
+  border-bottom: 1px solid var(--panel-borde);
+  padding-bottom: 6px;
+}
+.controles h2:not(:first-child) { margin-top: 18px; }
+
+/* ---------- Formularios ---------- */
+label {
+  display: block;
+  font-size: .85rem;
+  color: var(--texto-tenue);
+  margin: 8px 0 4px;
+}
+label small { color: var(--texto-tenue); opacity: .8; }
+
+select, input[type="number"] {
+  width: 100%;
+  padding: 9px 10px;
+  background: #0f1430;
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+  color: var(--texto);
+  font-size: .95rem;
+}
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgba(108, 140, 255, .2);
+}
+
+.rejilla-params {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.campo label { margin-top: 0; }
+
+.acciones {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+button {
+  flex: 1;
+  padding: 11px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .06s ease, filter .15s ease;
+}
+button:active { transform: translateY(1px); }
+.primario { background: var(--acento); color: #0b1020; }
+.primario:hover { filter: brightness(1.08); }
+.secundario { background: #232a4d; color: var(--texto); }
+.secundario:hover { filter: brightness(1.15); }
+
+.error {
+  margin-top: 12px;
+  background: var(--error-bg);
+  color: var(--error-fg);
+  border: 1px solid #5a2336;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: .88rem;
+}
+
+/* ---------- Gráfica ---------- */
+.grafica { display: flex; flex-direction: column; }
+.formulas {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 6px;
+  font-size: .9rem;
+}
+.formula-f { color: var(--acento-2); }
+.formula-g { color: var(--acento); font-weight: 600; }
+#lienzo { width: 100%; max-height: 460px; }
+
+/* ---------- Resumen ---------- */
+.resumen-wrap, .tabla-wrap {
+  max-width: 1200px;
+  margin: 0 auto 18px;
+  width: calc(100% - 32px);
+}
+.resumen { list-style: none; padding: 0; margin: 0; }
+.resumen li {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: #0f1430;
+  border-left: 3px solid var(--acento);
+  border-radius: 8px;
+  font-size: .92rem;
+}
+.resumen li:first-child {
+  border-left-color: var(--acento-2);
+  color: var(--texto);
+  font-weight: 600;
+}
+
+/* ---------- Tabla ---------- */
+.tabla { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.tabla th, .tabla td {
+  padding: 9px 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--panel-borde);
+}
+.tabla thead th {
+  color: var(--acento);
+  text-transform: uppercase;
+  font-size: .78rem;
+  letter-spacing: .5px;
+}
+.tabla tbody tr:hover { background: #0f1430; }
+.nota { color: var(--texto-tenue); font-size: .8rem; margin-top: 8px; }
+
+/* ---------- Pie ---------- */
+.pie {
+  text-align: center;
+  color: var(--texto-tenue);
+  font-size: .85rem;
+  padding: 10px 16px 30px;
+}
+
+.oculto { display: none; }

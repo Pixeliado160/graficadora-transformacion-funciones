@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #1a1f36; line-height: 1.5; font-size: 11.5pt; margin: 0;
+  }
+  .portada {
+    text-align: center; padding: 60px 20px 40px;
+    background: linear-gradient(135deg, #0f1221, #2a3366);
+    color: #fff; border-radius: 16px; margin-bottom: 28px;
+  }
+  .portada h1 { font-size: 26pt; margin: 0 0 10px; }
+  .portada .sub { font-size: 13pt; color: #b9c2ec; margin: 4px 0; }
+  .portada .modelo {
+    display: inline-block; margin-top: 18px; padding: 10px 20px;
+    background: rgba(255,255,255,.12); border-radius: 10px;
+    font-size: 15pt; letter-spacing: .5px;
+  }
+  h2 {
+    color: #3450c4; border-bottom: 2px solid #e2e7fb;
+    padding-bottom: 5px; margin-top: 26px; font-size: 15pt;
+  }
+  h3 { color: #1a1f36; margin: 16px 0 4px; font-size: 12.5pt; }
+  .diapo {
+    background: #f6f8ff; border: 1px solid #e2e7fb; border-left: 4px solid #3450c4;
+    border-radius: 10px; padding: 14px 18px; margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .diapo .num {
+    display: inline-block; background: #3450c4; color: #fff;
+    width: 26px; height: 26px; line-height: 26px; text-align: center;
+    border-radius: 50%; font-weight: 700; margin-right: 8px; font-size: 11pt;
+  }
+  .diapo .titulo { font-weight: 700; font-size: 12.5pt; color: #1a1f36; }
+  .guion {
+    margin-top: 8px; padding: 10px 14px; background: #fff;
+    border: 1px dashed #c3cdf5; border-radius: 8px;
+    font-style: italic; color: #333;
+  }
+  .guion::before { content: "Qué decir: "; font-style: normal; font-weight: 700; color: #3450c4; }
+  ul { margin: 6px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .destacado {
+    background: #fff4e6; border-left: 4px solid #ff9f43;
+    padding: 10px 14px; border-radius: 8px; margin: 10px 0;
+  }
+  .tag {
+    display: inline-block; background: #eef2ff; color: #3450c4;
+    padding: 2px 9px; border-radius: 20px; font-size: 9.5pt;
+    font-weight: 600; margin: 2px 3px 2px 0;
+  }
+  code {
+    background: #eef1fb; padding: 1px 6px; border-radius: 5px;
+    font-family: "Consolas", monospace; font-size: 10.5pt; color: #2a3366;
+  }
+  .cierre {
+    text-align: center; margin-top: 30px; padding: 20px;
+    background: linear-gradient(135deg, #0f1221, #2a3366); color: #fff;
+    border-radius: 14px;
+  }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+  <div class="portada">
+    <h1>Graficadora de Transformación de Funciones</h1>
+    <div class="sub">Proyecto Final · Curso de Precálculo</div>
+    <div class="sub">Guion de Exposición</div>
+    <div class="modelo">g(x) = a · f( b (x − c) ) + d</div>
+  </div>
+
+  <h2>Cómo usar este guion</h2>
+  <p>Cada bloque es una <strong>diapositiva / momento de la exposición</strong>.
+  El recuadro <em>“Qué decir”</em> es el libreto hablado: léelo con naturalidad,
+  no de memoria. La meta: que el jurado entienda <strong>qué construimos</strong>,
+  <strong>por qué funciona</strong> y <strong>qué lo hace distinto</strong>.
+  Tiempo sugerido total: <strong>8–10 minutos</strong>.</p>
+
+  <!-- 1 -->
+  <div class="diapo">
+    <span class="num">1</span><span class="titulo">Apertura con gancho</span>
+    <div class="guion">Buenos días. Todos aprendimos que mover una gráfica un poco a la
+    derecha o estirarla cambia su fórmula… pero verlo en papel es lento y abstracto.
+    Nosotros construimos una <strong>graficadora interactiva</strong> que toma cualquier
+    función y, en tiempo real, muestra cómo se transforma. En vez de imaginarlo, lo vemos.</div>
+  </div>
+
+  <!-- 2 -->
+  <div class="diapo">
+    <span class="num">2</span><span class="titulo">El problema y el objetivo</span>
+    <ul>
+      <li>Entender las transformaciones de funciones es difícil cuando solo se ven en pizarra.</li>
+      <li>Objetivo: una app que una la <strong>matemática de precálculo</strong> con la
+      <strong>programación</strong> de nuestra carrera.</li>
+    </ul>
+    <div class="guion">El reto del proyecto era integrar lo que vemos en Precálculo con lo que
+    programamos. Elegimos las transformaciones de funciones porque son visuales, y la
+    programación es perfecta para volverlas interactivas.</div>
+  </div>
+
+  <!-- 3 -->
+  <div class="diapo">
+    <span class="num">3</span><span class="titulo">El modelo matemático central</span>
+    <div class="destacado"><strong>g(x) = a · f( b (x − c) ) + d</strong></div>
+    <ul>
+      <li><strong>a</strong> → estira/comprime en vertical; si es negativo, refleja sobre el eje X.</li>
+      <li><strong>b</strong> → estira/comprime en horizontal; si es negativo, refleja sobre el eje Y.</li>
+      <li><strong>c</strong> → mueve la gráfica a la derecha o a la izquierda.</li>
+      <li><strong>d</strong> → mueve la gráfica hacia arriba o hacia abajo.</li>
+    </ul>
+    <div class="guion">Toda transformación cabe en esta sola ecuación. Cambiando cuatro números
+    —a, b, c, d— podemos estirar, comprimir, reflejar y mover <em>cualquier</em> función. Nuestra
+    app no hardcodea casos: implementa este modelo general y de ahí salen todos los efectos.</div>
+  </div>
+
+  <!-- 4 -->
+  <div class="diapo">
+    <span class="num">4</span><span class="titulo">Demostración en vivo (el momento clave)</span>
+    <ul>
+      <li>Abrir la app en el navegador (<code>python app.py</code> → <code>127.0.0.1:5000</code>).</li>
+      <li>Elegir la <strong>cuadrática</strong> y poner <code>a=2, c=1, d=3</code>.</li>
+      <li>Mostrar cómo la curva naranja (original) y la azul (transformada) se separan.</li>
+      <li>Cambiar <code>a</code> a <strong>negativo</strong> y señalar la reflexión.</li>
+    </ul>
+    <div class="guion">Miren: esta es la parábola normal, punteada. Ahora pongo a=2 y la estira;
+    c=1 la mueve a la derecha; d=3 la sube. Y si hago a negativo… se voltea. El resumen de abajo
+    explica <em>con palabras</em> cada cambio, y la tabla muestra los valores exactos. Todo esto
+    lo calcula Python en el instante.</div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- 5 -->
+  <div class="diapo">
+    <span class="num">5</span><span class="titulo">Cómo está hecho (arquitectura)</span>
+    <p><span class="tag">Python · Flask</span> <span class="tag">HTML</span>
+       <span class="tag">CSS</span> <span class="tag">JavaScript</span>
+       <span class="tag">Chart.js</span></p>
+    <ul>
+      <li><strong>Backend en Python:</strong> es el “cerebro”. Hace todos los cálculos
+      matemáticos y la validación.</li>
+      <li><strong>Frontend web:</strong> la cara visible. Solo pide los números a Python
+      y los dibuja.</li>
+    </ul>
+    <div class="guion">Decidimos separar el cerebro de la cara. El cerebro es Python: ahí vive
+    toda la matemática. La cara es una página web. El navegador no calcula nada; le pregunta a
+    Python y dibuja la respuesta. Así cumplimos “hecho en Python” y además es una web moderna.</div>
+  </div>
+
+  <!-- 6 -->
+  <div class="diapo">
+    <span class="num">6</span><span class="titulo">Código bien organizado (modular)</span>
+    <ul>
+      <li><code>funciones.py</code> → las 6 funciones madre y sus dominios.</li>
+      <li><code>transformaciones.py</code> → el modelo g(x), la tabla y el resumen.</li>
+      <li><code>validacion.py</code> → revisa que las entradas sean correctas.</li>
+    </ul>
+    <div class="guion">No metimos todo en un solo archivo gigante. Separamos por responsabilidad:
+    las funciones, las transformaciones y la validación viven aparte. Eso es lo que pedía el
+    proyecto —lógica, datos y presentación desacoplados— y hace el código fácil de mantener.</div>
+  </div>
+
+  <!-- 7 -->
+  <div class="diapo">
+    <span class="num">7</span><span class="titulo">Lo que lo hace robusto</span>
+    <ul>
+      <li>Si escribes <strong>letras</strong> donde van números, usa valores por defecto y no truena.</li>
+      <li>Respeta el <strong>dominio</strong>: no intenta la raíz de un número negativo.</li>
+      <li>Valores por defecto: <code>a=1, b=1, c=0, d=0</code>.</li>
+    </ul>
+    <div class="guion">Pensamos en el usuario que se equivoca. Si escribe “hola” en vez de un número,
+    la app no se cae: usa un valor por defecto. Y nunca intenta calcular la raíz de un negativo,
+    porque validamos los dominios. Es matemáticamente correcto y a prueba de errores.</div>
+  </div>
+
+  <!-- 8 -->
+  <div class="diapo">
+    <span class="num">8</span><span class="titulo">Lo que entrega la app</span>
+    <ul>
+      <li>Gráfica doble: original <strong>punteada</strong> + transformada <strong>continua</strong>.</li>
+      <li>Resumen <strong>en español</strong> de cada transformación.</li>
+      <li>Tabla de puntos (x, f(x), g(x)).</li>
+      <li>La fórmula de g(x) construida automáticamente.</li>
+    </ul>
+    <div class="guion">La app no solo dibuja: explica. Da el gráfico, la descripción en palabras,
+    la tabla de valores y la fórmula final. Un estudiante puede usarla para <em>entender</em>,
+    no solo para ver un dibujo.</div>
+  </div>
+
+  <!-- 9 -->
+  <div class="diapo">
+    <span class="num">9</span><span class="titulo">Cierre e impacto</span>
+    <div class="guion">Convertimos un tema abstracto de Precálculo en una herramienta viva.
+    Unimos matemática y programación en algo que de verdad ayuda a aprender. Está hecho en Python,
+    es modular, es a prueba de errores y es una web que cualquiera puede abrir. Gracias — ¿preguntas?</div>
+  </div>
+
+  <h2>Posibles preguntas del jurado (y cómo responder)</h2>
+  <div class="diapo">
+    <span class="titulo">“¿Por qué web si pedían Python?”</span>
+    <div class="guion">Todo el cálculo está en Python (Flask). La web es solo la interfaz; el
+    navegador no hace matemática, se la pide a Python. Cumplimos ambas cosas.</div>
+  </div>
+  <div class="diapo">
+    <span class="titulo">“¿Qué pasa si pongo mal un dato?”</span>
+    <div class="guion">La validación lo atrapa: usa valores por defecto o avisa con un mensaje,
+    y nunca rompe el dominio de la función.</div>
+  </div>
+  <div class="diapo">
+    <span class="titulo">“¿Podrían agregar más funciones?”</span>
+    <div class="guion">Sí, muy fácil: solo se añade una entrada en <code>funciones.py</code> con su
+    fórmula y su dominio. El resto del sistema la toma automáticamente. Por eso separamos el código.</div>
+  </div>
+
+  <div class="cierre">
+    <strong>Backend en Python (Flask) &nbsp;·&nbsp; Frontend en HTML / CSS / JavaScript</strong><br>
+    g(x) = a · f( b (x − c) ) + d
+  </div>
+
+</body>
+</html>
