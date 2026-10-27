@@ -1,14 +1,14 @@
 /* ==========================================================================
    graficadora.js — UI de la demo (GitHub Pages)
-   Tema oscuro violeta/cian. Cálculos desde motor.js (espejo del Python).
+   Tema oscuro minimalista (negro mate + grises). Cálculos desde motor.js (espejo del Python).
    Animaciones con GSAP: entrada orquestada, aurora que respira, curva que
    se dibuja trazo a trazo. Respeta prefers-reduced-motion.
    ========================================================================== */
 
 const COLOR = {
-  violeta: "#a855f7", cian: "#22d3ee",
-  grid: "rgba(154,160,207,.14)", borde: "#2a2c52",
-  texto: "#eef0ff", texto2: "#9aa0cf",
+  acento: "#e8e8ea", acento2: "#6f6f78",
+  grid: "rgba(141,141,150,.12)", borde: "#26262c",
+  texto: "#f2f2f4", texto2: "#8d8d96",
 };
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -70,12 +70,12 @@ function dibujarGrafica(data) {
     type: "line",
     data: {
       datasets: [
-        { label: "f(x) original", data: serieF, borderColor: COLOR.cian,
+        { label: "f(x) original", data: serieF, borderColor: COLOR.acento2,
           borderDash: [5, 5], borderWidth: 1.75, pointRadius: 0, tension: 0.18, spanGaps: false },
-        { label: "g(x) transformada", data: serieG, borderColor: COLOR.violeta,
+        { label: "g(x) transformada", data: serieG, borderColor: COLOR.acento,
           borderWidth: 3, pointRadius: 0, tension: 0.18, spanGaps: false,
-          // Glow sutil bajo la curva protagonista
-          backgroundColor: "rgba(168,85,247,.06)", fill: true },
+          // Relleno muy sutil bajo la curva protagonista
+          backgroundColor: "rgba(232,232,234,.05)", fill: true },
       ],
     },
     options: {
@@ -87,8 +87,8 @@ function dibujarGrafica(data) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#15162e", borderColor: COLOR.borde, borderWidth: 1,
-          padding: 11, cornerRadius: 10, titleColor: COLOR.cian, bodyColor: COLOR.texto,
+          backgroundColor: "#141417", borderColor: COLOR.borde, borderWidth: 1,
+          padding: 11, cornerRadius: 10, titleColor: COLOR.texto2, bodyColor: COLOR.texto,
           titleFont: { family: "Space Grotesk" }, bodyFont: { family: "Inter" },
           callbacks: {
             title: (it) => `x = ${(+it[0].parsed.x).toFixed(2)}`,
