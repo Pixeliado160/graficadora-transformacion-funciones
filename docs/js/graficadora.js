@@ -1,8 +1,12 @@
 /* ==========================================================================
-   graficadora.js — UI de la DEMO estática (GitHub Pages)
-   Igual que la versión del frontend, pero en vez de pedir los cálculos a
-   un servidor Python, los obtiene de motor.js (que corre en el navegador).
+   graficadora.js — UI de la demo (GitHub Pages)
+   Obtiene los cálculos de motor.js (JS, espejo del backend Python) y los
+   dibuja. Diseño: una sola animación memorable — la curva transiciona entre
+   estados cada vez que cambia un parámetro.
    ========================================================================== */
+
+const COLOR = { azul: "#1B6FE3", naranja: "#E8683C", grid: "#C8C4B8", tinta: "#0E1116", tinta2: "#585750" };
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 let grafico = null;
 const $ = (id) => document.getElementById(id);
@@ -15,7 +19,7 @@ function cargarFunciones() {
   listarFunciones().forEach((fn) => {
     const op = document.createElement("option");
     op.value = fn.clave;
-    op.textContent = `${fn.nombre}  —  ${fn.formula}`;
+    op.textContent = `${fn.nombre} — ${fn.formula}`;
     selFuncion.appendChild(op);
   });
   alternarCajaBase();
@@ -35,56 +39,87 @@ function graficar() {
     puntos_tabla: $("puntos_tabla").value,
   };
   try {
-    const data = calcular(datos); // motor local (motor.js)
+    const data = calcular(datos);
     dibujarGrafica(data);
     pintarResumen(data.resumen);
     pintarTabla(data.tabla);
-    $("etq-f").textContent = `f(x) original: ${data.formula_f}`;
-    $("etq-g").textContent = `g(x) transformada: ${data.formula_g}`;
+    $("etq-f").textContent = `f(x) = ${data.formula_f.replace("f(x) = ", "")}`;
+    $("etq-g").textContent = data.formula_g;
   } catch (e) {
-    mostrarError(e.message || "Ocurrió un error al calcular.");
+    mostrarError(e.message || "No se pudo calcular con esos valores.");
   }
 }
 
 function dibujarGrafica(data) {
   const serieF = data.serie_f.map((p) => ({ x: p[0], y: p[1] }));
   const serieG = data.serie_g.map((p) => ({ x: p[0], y: p[1] }));
-  const cfg = {
+
+  // Si ya existe el gráfico, ACTUALIZAMOS los datos en vez de recrearlo:
+  // así Chart.js interpola entre la curva anterior y la nueva (transición).
+  if (grafico) {
+    grafico.data.datasets[0].data = serieF;
+    grafico.data.datasets[1].data = serieG;
+    grafico.update();           // anima del estado viejo al nuevo
+    return;
+  }
+
+  grafico = new Chart($("lienzo"), {
     type: "line",
     data: {
       datasets: [
-        { label: "f(x) original", data: serieF, borderColor: "#ff9f6c",
-          borderDash: [6, 5], borderWidth: 2, pointRadius: 0, tension: 0.15, spanGaps: false },
-        { label: "g(x) transformada", data: serieG, borderColor: "#6c8cff",
-          borderWidth: 3, pointRadius: 0, tension: 0.15, spanGaps: false },
+        { label: "f(x) original", data: serieF, borderColor: COLOR.naranja,
+          borderDash: [5, 5], borderWidth: 1.75, pointRadius: 0, tension: 0.18, spanGaps: false },
+        { label: "g(x) transformada", data: serieG, borderColor: COLOR.azul,
+          borderWidth: 2.75, pointRadius: 0, tension: 0.18, spanGaps: false },
       ],
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 520, easing: "easeInOutCubic" },
       interaction: { mode: "nearest", intersect: false },
       plugins: {
-        legend: { labels: { color: "#e8ebf7" } },
-        title: { display: true, text: "Función original f(x) vs. función transformada g(x)", color: "#e8ebf7" },
+        legend: { display: false },  // la leyenda vive en el HTML, más limpia
+        tooltip: {
+          backgroundColor: COLOR.tinta, padding: 10, cornerRadius: 0,
+          titleFont: { family: "Inter" }, bodyFont: { family: "Inter" },
+          callbacks: {
+            title: (it) => `x = ${(+it[0].parsed.x).toFixed(2)}`,
+            label: (it) => `${it.dataset.label.split(" ")[0]} = ${(+it.parsed.y).toFixed(3)}`,
+          },
+        },
       },
       scales: {
-        x: { type: "linear", title: { display: true, text: "Eje X", color: "#9aa3c7" },
-             grid: { color: "#2a3052" }, ticks: { color: "#9aa3c7" } },
-        y: { title: { display: true, text: "Eje Y", color: "#9aa3c7" },
-             grid: { color: "#2a3052" }, ticks: { color: "#9aa3c7" } },
+        x: {
+          type: "linear",
+          grid: { color: COLOR.grid, lineWidth: 0.5 },
+          border: { color: COLOR.tinta },
+          ticks: { color: COLOR.tinta2, font: { family: "Inter", size: 11 } },
+        },
+        y: {
+          grid: { color: COLOR.grid, lineWidth: 0.5 },
+          border: { color: COLOR.tinta },
+          ticks: { color: COLOR.tinta2, font: { family: "Inter", size: 11 } },
+        },
       },
     },
-  };
-  if (grafico) grafico.destroy();
-  grafico = new Chart($("lienzo"), cfg);
+  });
 }
 
 function pintarResumen(frases) {
-  const ul = $("resumen"); ul.innerHTML = "";
-  frases.forEach((f) => { const li = document.createElement("li"); li.textContent = f; ul.appendChild(li); });
+  const ul = $("resumen");
+  ul.innerHTML = "";
+  frases.forEach((f, i) => {
+    const li = document.createElement("li");
+    li.textContent = f;
+    li.style.animationDelay = reduceMotion ? "0s" : `${i * 45}ms`;  // escalonado discreto
+    ul.appendChild(li);
+  });
 }
 
 function pintarTabla(filas) {
-  const tbody = $("tabla-puntos").querySelector("tbody"); tbody.innerHTML = "";
+  const tbody = $("tabla-puntos").querySelector("tbody");
+  tbody.innerHTML = "";
   const celda = (v) => (v === null || v === undefined ? "—" : v);
   filas.forEach((f) => {
     const tr = document.createElement("tr");
@@ -102,6 +137,13 @@ function restablecer() {
   graficar();
 }
 
+// Re-graficar en vivo al escribir, con pequeño debounce (sensación fluida)
+let t = null;
+function graficarVivo() { clearTimeout(t); t = setTimeout(graficar, 180); }
+
+["a", "b", "c", "d", "base_exp", "x_min", "x_max", "puntos_tabla"].forEach((id) =>
+  $(id).addEventListener("input", graficarVivo)
+);
 selFuncion.addEventListener("change", () => { alternarCajaBase(); graficar(); });
 $("btn-graficar").addEventListener("click", graficar);
 $("btn-reset").addEventListener("click", restablecer);

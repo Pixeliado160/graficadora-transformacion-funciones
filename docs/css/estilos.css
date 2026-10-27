@@ -1,197 +1,291 @@
 /* ==========================================================================
-   estilos.css — Apariencia de la graficadora
-   Paleta oscura con acentos; diseño limpio y legible para exposición.
+   estilos.css — Graficadora de Transformación de Funciones
+   Diseño: pizarra matemática en claro. La gráfica es la protagonista;
+   los controles son tipografía técnica quieta. Una sola animación memorable:
+   la curva transiciona al cambiar de estado.
    ========================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
 :root {
-  --fondo: #0f1221;
-  --panel: #191d33;
-  --panel-borde: #2a3052;
-  --texto: #e8ebf7;
-  --texto-tenue: #9aa3c7;
-  --acento: #6c8cff;      /* azul: g(x) transformada */
-  --acento-2: #ff9f6c;    /* naranja: f(x) original */
-  --ok: #4ad99a;
-  --error-bg: #3a1726;
-  --error-fg: #ff8aa6;
-  --sombra: 0 10px 30px rgba(0, 0, 0, .35);
-  --radio: 14px;
-  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --tinta:      #0E1116;   /* texto principal */
+  --tinta-2:    #585750;   /* texto secundario */
+  --papel:      #FBFAF7;   /* fondo */
+  --panel:      #F2F0EA;   /* superficies */
+  --linea:      #D9D5C9;   /* hairlines */
+  --grid:       #C8C4B8;   /* cuadrícula de la gráfica */
+  --azul:       #1B6FE3;   /* g(x) transformada */
+  --naranja:    #E8683C;   /* f(x) original */
+  --error-fg:   #B3341F;
+
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inter', system-ui, -apple-system, sans-serif;
+
+  --borde: 1px solid var(--linea);
 }
 
 * { box-sizing: border-box; }
 
+html { scroll-behavior: smooth; }
+
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, #1b2246 0%, transparent 60%),
-    var(--fondo);
-  color: var(--texto);
-  min-height: 100vh;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Rejilla de fondo sutil tipo papel milimetrado, muy tenue */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--linea) 1px, transparent 1px),
+    linear-gradient(90deg, var(--linea) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: .18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.contenido { position: relative; z-index: 1; }
 
 /* ---------- Cabecera ---------- */
 .cabecera {
-  text-align: center;
-  padding: 28px 16px 8px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 46px 28px 10px;
+}
+.marca {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  color: var(--tinta-2);
+  text-transform: uppercase;
 }
 .cabecera h1 {
-  margin: 0;
-  font-size: clamp(1.4rem, 3vw, 2.1rem);
-  letter-spacing: .3px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.04;
+  letter-spacing: -.01em;
+  margin: 10px 0 14px;
+  max-width: 18ch;
 }
-.subtitulo {
-  color: var(--texto-tenue);
-  margin: 6px 0 0;
-  font-size: .95rem;
+/* La fórmula como elemento visual, en notación serif */
+.formula-hero {
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--tinta);
+  border-left: 3px solid var(--azul);
+  padding-left: 14px;
 }
+.formula-hero .var { color: var(--azul); font-style: normal; font-weight: 500; }
 
-/* ---------- Disposición principal ---------- */
-.contenedor {
+.enlaces-top {
+  margin-top: 16px;
+  font-size: 13.5px;
+  color: var(--tinta-2);
+}
+.enlaces-top a {
+  color: var(--tinta);
+  text-decoration: none;
+  border-bottom: 1px solid var(--azul);
+  padding-bottom: 1px;
+  transition: color .18s ease, border-color .18s ease;
+}
+.enlaces-top a:hover { color: var(--azul); }
+.enlaces-top .sep { margin: 0 10px; color: var(--linea); }
+
+/* ---------- Disposición principal: lienzo protagonista ---------- */
+.lienzo-area {
+  max-width: 1180px;
+  margin: 26px auto 0;
+  padding: 0 28px;
   display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 18px;
-  max-width: 1200px;
-  margin: 18px auto;
-  padding: 0 16px;
+  grid-template-columns: 300px 1fr;
+  gap: 28px;
+  align-items: start;
 }
-@media (max-width: 880px) {
-  .contenedor { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+  .lienzo-area { grid-template-columns: 1fr; }
 }
 
-.panel {
+/* Columna de controles: quieta, hairlines, nada de sombras */
+.controles {
+  border: var(--borde);
   background: var(--panel);
-  border: 1px solid var(--panel-borde);
-  border-radius: var(--radio);
-  padding: 18px;
-  box-shadow: var(--sombra);
+  padding: 22px 20px;
 }
-.panel h2 {
-  font-size: 1rem;
-  margin: 0 0 10px;
-  color: var(--acento);
-  border-bottom: 1px solid var(--panel-borde);
-  padding-bottom: 6px;
+.controles .grupo + .grupo { margin-top: 24px; }
+.rotulo {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: var(--borde);
 }
-.controles h2:not(:first-child) { margin-top: 18px; }
 
-/* ---------- Formularios ---------- */
 label {
   display: block;
-  font-size: .85rem;
-  color: var(--texto-tenue);
-  margin: 8px 0 4px;
+  font-size: 12.5px;
+  color: var(--tinta-2);
+  margin: 0 0 5px;
 }
-label small { color: var(--texto-tenue); opacity: .8; }
+.campo .pista { color: var(--tinta-2); opacity: .75; }
 
 select, input[type="number"] {
   width: 100%;
   padding: 9px 10px;
-  background: #0f1430;
-  border: 1px solid var(--panel-borde);
-  border-radius: 10px;
-  color: var(--texto);
-  font-size: .95rem;
+  background: var(--papel);
+  border: var(--borde);
+  border-radius: 0;
+  color: var(--tinta);
+  font-family: var(--sans);
+  font-size: 14px;
+  transition: border-color .16s ease, box-shadow .16s ease;
 }
 select:focus, input:focus {
   outline: none;
-  border-color: var(--acento);
-  box-shadow: 0 0 0 3px rgba(108, 140, 255, .2);
+  border-color: var(--azul);
+  box-shadow: inset 0 -2px 0 var(--azul);
 }
 
-.rejilla-params {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.campo label { margin-top: 0; }
+.rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.campo label { margin-bottom: 4px; }
 
-.acciones {
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
-}
+.acciones { display: flex; gap: 10px; margin-top: 22px; }
 button {
   flex: 1;
-  padding: 11px 12px;
-  border: none;
-  border-radius: 10px;
-  font-size: .95rem;
-  font-weight: 600;
+  padding: 10px 12px;
+  border: 1px solid var(--tinta);
+  border-radius: 0;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
   cursor: pointer;
-  transition: transform .06s ease, filter .15s ease;
+  background: var(--papel);
+  color: var(--tinta);
+  transition: background .16s ease, color .16s ease, transform .08s ease;
 }
 button:active { transform: translateY(1px); }
-.primario { background: var(--acento); color: #0b1020; }
-.primario:hover { filter: brightness(1.08); }
-.secundario { background: #232a4d; color: var(--texto); }
-.secundario:hover { filter: brightness(1.15); }
+.primario { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+.primario:hover { background: var(--azul); border-color: var(--azul); }
+.secundario:hover { background: var(--panel); }
 
 .error {
-  margin-top: 12px;
-  background: var(--error-bg);
+  margin-top: 14px;
   color: var(--error-fg);
-  border: 1px solid #5a2336;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: .88rem;
+  font-size: 13px;
+  border-left: 3px solid var(--error-fg);
+  padding-left: 10px;
 }
 
-/* ---------- Gráfica ---------- */
-.grafica { display: flex; flex-direction: column; }
-.formulas {
+/* ---------- Lienzo de la gráfica ---------- */
+.grafica {
+  border: var(--borde);
+  background: var(--papel);
+  padding: 20px 22px 24px;
+}
+.grafica-cab {
   display: flex;
-  gap: 16px;
-  margin-bottom: 6px;
-  font-size: .9rem;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  align-items: baseline;
+  margin-bottom: 14px;
 }
-.formula-f { color: var(--acento-2); }
-.formula-g { color: var(--acento); font-weight: 600; }
-#lienzo { width: 100%; max-height: 460px; }
+.leyenda { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.leyenda .trazo { width: 22px; height: 0; border-top-width: 2px; border-top-style: solid; }
+.leyenda.f .trazo { border-top-style: dashed; border-color: var(--naranja); }
+.leyenda.g .trazo { border-color: var(--azul); border-top-width: 3px; }
+.leyenda .exp { font-family: var(--serif); font-style: italic; color: var(--tinta); }
+.lienzo-wrap { position: relative; height: 440px; }
+#lienzo { width: 100%; height: 100% !important; }
 
-/* ---------- Resumen ---------- */
-.resumen-wrap, .tabla-wrap {
-  max-width: 1200px;
-  margin: 0 auto 18px;
-  width: calc(100% - 32px);
+/* ---------- Secciones inferiores ---------- */
+.inferior {
+  max-width: 1180px;
+  margin: 28px auto 0;
+  padding: 0 28px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 28px;
+  align-items: start;
 }
+@media (max-width: 760px) { .inferior { grid-template-columns: 1fr; } }
+
+.bloque { border: var(--borde); background: var(--panel); padding: 22px 22px 24px; }
+.bloque h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.15rem;
+  margin: 0 0 14px;
+}
+
+/* Resumen interpretativo */
 .resumen { list-style: none; padding: 0; margin: 0; }
 .resumen li {
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  background: #0f1430;
-  border-left: 3px solid var(--acento);
-  border-radius: 8px;
-  font-size: .92rem;
+  padding: 9px 0 9px 16px;
+  border-left: 2px solid var(--linea);
+  font-size: 14px;
+  color: var(--tinta);
+  /* entrada escalonada discreta cuando se re-renderiza */
+  animation: aparece .32s ease both;
 }
 .resumen li:first-child {
-  border-left-color: var(--acento-2);
-  color: var(--texto);
-  font-weight: 600;
+  border-left-color: var(--naranja);
+  font-family: var(--serif);
+  font-size: 1rem;
+}
+.resumen li + li { margin-top: 2px; }
+
+@keyframes aparece {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ---------- Tabla ---------- */
-.tabla { width: 100%; border-collapse: collapse; font-size: .92rem; }
+/* Tabla */
+.tabla { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .tabla th, .tabla td {
-  padding: 9px 12px;
-  text-align: center;
-  border-bottom: 1px solid var(--panel-borde);
+  padding: 9px 10px;
+  text-align: right;
+  border-bottom: var(--borde);
+  font-size: 13.5px;
 }
 .tabla thead th {
-  color: var(--acento);
-  text-transform: uppercase;
-  font-size: .78rem;
-  letter-spacing: .5px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--tinta-2);
+  border-bottom: 1px solid var(--tinta);
 }
-.tabla tbody tr:hover { background: #0f1430; }
-.nota { color: var(--texto-tenue); font-size: .8rem; margin-top: 8px; }
+.tabla td:first-child, .tabla th:first-child { text-align: left; color: var(--tinta-2); }
+.tabla tbody tr { transition: background .14s ease; }
+.tabla tbody tr:hover { background: var(--papel); }
+.nota { color: var(--tinta-2); font-size: 12px; margin-top: 12px; }
 
 /* ---------- Pie ---------- */
 .pie {
-  text-align: center;
-  color: var(--texto-tenue);
-  font-size: .85rem;
-  padding: 10px 16px 30px;
+  max-width: 1180px;
+  margin: 40px auto 0;
+  padding: 20px 28px 48px;
+  border-top: var(--borde);
+  font-size: 13px;
+  color: var(--tinta-2);
 }
+.pie .exp { font-family: var(--serif); font-style: italic; }
 
 .oculto { display: none; }
+
+/* ---------- Accesibilidad: respetar reduce-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto; }
+}

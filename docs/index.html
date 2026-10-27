@@ -3,94 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Graficadora de Transformación de Funciones · Precálculo</title>
+  <title>Graficadora de Transformación de Funciones</title>
+  <meta name="description" content="Herramienta interactiva de precálculo: visualiza cómo se transforma una función al modificar los parámetros a, b, c y d.">
   <link rel="stylesheet" href="css/estilos.css">
-  <style>
-    .aviso-demo {
-      max-width: 1200px; margin: 0 auto 4px; width: calc(100% - 32px);
-      background: #1b2246; border: 1px solid #2a3052; color: #b9c2ec;
-      border-radius: 10px; padding: 8px 14px; font-size: .82rem; text-align: center;
-    }
-    .aviso-demo a { color: #6c8cff; text-decoration: none; font-weight: 600; }
-  </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
+<div class="contenido">
+
   <header class="cabecera">
-    <h1>Graficadora de Transformación de Funciones</h1>
-    <p class="subtitulo">
-      g(x) = a · f( b (x − c) ) + d &nbsp;·&nbsp; Precálculo · Proyecto Final
+    <div class="marca">Precálculo · Proyecto Final</div>
+    <h1>Graficadora de transformación de funciones</h1>
+    <p class="formula-hero">
+      g(x) = <span class="var">a</span>·f(<span class="var">b</span>(x − <span class="var">c</span>)) + <span class="var">d</span>
+    </p>
+    <p class="enlaces-top">
+      Motor matemático en Python (Flask); esta demo lo reimplementa en JavaScript para correr sin servidor.
+      <br>
+      <a href="https://github.com/Pixeliado160/graficadora-transformacion-funciones" target="_blank" rel="noopener">Ver código</a>
+      <span class="sep">/</span>
+      <a href="Exposicion-Graficadora.pdf" target="_blank" rel="noopener">Guion de exposición</a>
     </p>
   </header>
 
-  <p class="aviso-demo">
-    Demo interactiva. El proyecto oficial corre su motor en <strong>Python (Flask)</strong>;
-    esta versión web reimplementa el mismo cálculo en JavaScript para funcionar sin servidor.
-    Código completo en <a href="https://github.com/Pixeliado160/graficadora-transformacion-funciones" target="_blank" rel="noopener">GitHub</a>
-    &nbsp;·&nbsp; <a href="Exposicion-Graficadora.pdf" target="_blank" rel="noopener">Guion de exposición (PDF)</a>.
-  </p>
-
-  <main class="contenedor">
-    <section class="panel controles" aria-label="Controles">
-      <h2>1 · Función base</h2>
-      <label for="funcion">Elige una función madre f(x):</label>
-      <select id="funcion"></select>
-
-      <div id="caja-base" class="oculto">
-        <label for="base_exp">Base de la exponencial (a &gt; 0, a ≠ 1):</label>
-        <input type="number" id="base_exp" value="2" step="0.1">
+  <!-- Lienzo protagonista + controles -->
+  <section class="lienzo-area">
+    <aside class="controles" aria-label="Controles">
+      <div class="grupo">
+        <h2 class="rotulo">Función base</h2>
+        <label for="funcion">Función madre f(x)</label>
+        <select id="funcion"></select>
+        <div id="caja-base" class="oculto" style="margin-top:12px">
+          <label for="base_exp">Base de la exponencial (a &gt; 0, a ≠ 1)</label>
+          <input type="number" id="base_exp" value="2" step="0.1">
+        </div>
       </div>
 
-      <h2>2 · Parámetros de transformación</h2>
-      <div class="rejilla-params">
-        <div class="campo"><label for="a">a <small>(vertical)</small></label><input type="number" id="a" value="1" step="0.5"></div>
-        <div class="campo"><label for="b">b <small>(horizontal)</small></label><input type="number" id="b" value="1" step="0.5"></div>
-        <div class="campo"><label for="c">c <small>(desp. horizontal)</small></label><input type="number" id="c" value="0" step="0.5"></div>
-        <div class="campo"><label for="d">d <small>(desp. vertical)</small></label><input type="number" id="d" value="0" step="0.5"></div>
+      <div class="grupo">
+        <h2 class="rotulo">Parámetros</h2>
+        <div class="rejilla">
+          <div class="campo"><label for="a">a <span class="pista">vertical</span></label><input type="number" id="a" value="1" step="0.5"></div>
+          <div class="campo"><label for="b">b <span class="pista">horizontal</span></label><input type="number" id="b" value="1" step="0.5"></div>
+          <div class="campo"><label for="c">c <span class="pista">← →</span></label><input type="number" id="c" value="0" step="0.5"></div>
+          <div class="campo"><label for="d">d <span class="pista">↑ ↓</span></label><input type="number" id="d" value="0" step="0.5"></div>
+        </div>
       </div>
 
-      <h2>3 · Intervalo</h2>
-      <div class="rejilla-params">
-        <div class="campo"><label for="x_min">x mínimo</label><input type="number" id="x_min" value="-10" step="1"></div>
-        <div class="campo"><label for="x_max">x máximo</label><input type="number" id="x_max" value="10" step="1"></div>
-        <div class="campo"><label for="puntos_tabla">Puntos tabla</label><input type="number" id="puntos_tabla" value="9" min="5" step="1"></div>
+      <div class="grupo">
+        <h2 class="rotulo">Intervalo</h2>
+        <div class="rejilla">
+          <div class="campo"><label for="x_min">x mínimo</label><input type="number" id="x_min" value="-10" step="1"></div>
+          <div class="campo"><label for="x_max">x máximo</label><input type="number" id="x_max" value="10" step="1"></div>
+          <div class="campo"><label for="puntos_tabla">Puntos tabla</label><input type="number" id="puntos_tabla" value="9" min="5" step="1"></div>
+        </div>
+        <div class="acciones">
+          <button id="btn-graficar" class="primario">Graficar</button>
+          <button id="btn-reset" class="secundario">Restablecer</button>
+        </div>
+        <p id="mensaje-error" class="error oculto" role="alert"></p>
       </div>
+    </aside>
 
-      <div class="acciones">
-        <button id="btn-graficar" class="primario">Graficar transformación</button>
-        <button id="btn-reset" class="secundario">Restablecer</button>
+    <div class="grafica">
+      <div class="grafica-cab">
+        <span class="leyenda f"><span class="trazo"></span><span id="etq-f" class="exp">f(x) original</span></span>
+        <span class="leyenda g"><span class="trazo"></span><span id="etq-g" class="exp">g(x) transformada</span></span>
       </div>
-
-      <p id="mensaje-error" class="error oculto" role="alert"></p>
-    </section>
-
-    <section class="panel grafica" aria-label="Gráfica">
-      <h2>Plano cartesiano</h2>
-      <div class="formulas">
-        <span id="etq-f" class="formula-f">f(x)</span>
-        <span id="etq-g" class="formula-g">g(x)</span>
-      </div>
-      <canvas id="lienzo"></canvas>
-    </section>
-  </main>
-
-  <section class="panel resumen-wrap" aria-label="Resumen">
-    <h2>Resumen interpretativo</h2>
-    <ul id="resumen" class="resumen"></ul>
+      <div class="lienzo-wrap"><canvas id="lienzo"></canvas></div>
+    </div>
   </section>
 
-  <section class="panel tabla-wrap" aria-label="Tabla de puntos">
-    <h2>Tabla de puntos clave</h2>
-    <table id="tabla-puntos" class="tabla">
-      <thead><tr><th>x</th><th>f(x)</th><th>g(x)</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <p class="nota">Las celdas con “—” indican puntos fuera del dominio de la función.</p>
+  <!-- Resumen + tabla -->
+  <section class="inferior">
+    <div class="bloque">
+      <h2>Qué le pasó a la función</h2>
+      <ul id="resumen" class="resumen"></ul>
+    </div>
+    <div class="bloque">
+      <h2>Puntos clave</h2>
+      <table class="tabla" id="tabla-puntos">
+        <thead><tr><th>x</th><th>f(x)</th><th>g(x)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="nota">“—” marca puntos fuera del dominio de la función.</p>
+    </div>
   </section>
 
   <footer class="pie">
-    Motor oficial en <strong>Python (Flask)</strong> · Interfaz en <strong>HTML / CSS / JavaScript</strong>
+    Motor oficial en Python (Flask) · Interfaz en HTML, CSS y JavaScript ·
+    <span class="exp">g(x) = a·f(b(x − c)) + d</span>
   </footer>
+
+</div>
 
   <script src="js/motor.js"></script>
   <script src="js/graficadora.js"></script>
