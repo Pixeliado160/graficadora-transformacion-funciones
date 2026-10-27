@@ -7,17 +7,22 @@
   <meta name="description" content="Herramienta interactiva de precálculo: visualiza cómo se transforma una función al modificar los parámetros a, b, c y d.">
   <link rel="stylesheet" href="css/estilos.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head>
 <body>
+
+  <!-- Resplandores de fondo -->
+  <div class="aurora" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+
 <div class="contenido">
 
   <header class="cabecera">
-    <div class="marca">Precálculo · Proyecto Final</div>
-    <h1>Graficadora de transformación de funciones</h1>
-    <p class="formula-hero">
+    <div class="marca anim-init">Precálculo · Proyecto Final</div>
+    <h1 class="anim-init">Graficadora de <span class="grad">transformación de funciones</span></h1>
+    <p class="formula-hero anim-init">
       g(x) = <span class="var">a</span>·f(<span class="var">b</span>(x − <span class="var">c</span>)) + <span class="var">d</span>
     </p>
-    <p class="enlaces-top">
+    <p class="enlaces-top anim-init">
       Motor matemático en Python (Flask); esta demo lo reimplementa en JavaScript para correr sin servidor.
       <br>
       <a href="https://github.com/Pixeliado160/graficadora-transformacion-funciones" target="_blank" rel="noopener">Ver código</a>
@@ -26,9 +31,8 @@
     </p>
   </header>
 
-  <!-- Lienzo protagonista + controles -->
   <section class="lienzo-area">
-    <aside class="controles" aria-label="Controles">
+    <aside class="controles panel-glass anim-init" aria-label="Controles">
       <div class="grupo">
         <h2 class="rotulo">Función base</h2>
         <label for="funcion">Función madre f(x)</label>
@@ -64,7 +68,7 @@
       </div>
     </aside>
 
-    <div class="grafica">
+    <div class="grafica panel-glass anim-init">
       <div class="grafica-cab">
         <span class="leyenda f"><span class="trazo"></span><span id="etq-f" class="exp">f(x) original</span></span>
         <span class="leyenda g"><span class="trazo"></span><span id="etq-g" class="exp">g(x) transformada</span></span>
@@ -73,13 +77,12 @@
     </div>
   </section>
 
-  <!-- Resumen + tabla -->
   <section class="inferior">
-    <div class="bloque">
+    <div class="bloque panel-glass anim-init">
       <h2>Qué le pasó a la función</h2>
       <ul id="resumen" class="resumen"></ul>
     </div>
-    <div class="bloque">
+    <div class="bloque panel-glass anim-init">
       <h2>Puntos clave</h2>
       <table class="tabla" id="tabla-puntos">
         <thead><tr><th>x</th><th>f(x)</th><th>g(x)</th></tr></thead>
