@@ -1,68 +1,47 @@
 /* ==========================================================================
    graficadora.js — UI de la demo (GitHub Pages)
-   Tema oscuro minimalista (negro mate + grises). Cálculos desde motor.js (espejo del Python).
+   Entrada única estilo GeoGebra: el usuario escribe la función como texto.
+   Cálculos desde motor.js (intérprete propio, sin eval; espejo del Python).
    Animaciones con GSAP: entrada orquestada, aurora que respira, curva que
    se dibuja trazo a trazo. Respeta prefers-reduced-motion.
    ========================================================================== */
 
 const COLOR = {
-  acento: "#e8e8ea", acento2: "#6f6f78",
+  acento: "#e8e8ea",
   grid: "rgba(141,141,150,.12)", borde: "#26262c",
   texto: "#f2f2f4", texto2: "#8d8d96",
 };
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 let grafico = null;
-let primeraVez = true;
 const $ = (id) => document.getElementById(id);
-const selFuncion = $("funcion");
-const cajaBase = $("caja-base");
+const campoExpr = $("expr");
 const msgError = $("mensaje-error");
-
-function cargarFunciones() {
-  selFuncion.innerHTML = "";
-  listarFunciones().forEach((fn) => {
-    const op = document.createElement("option");
-    op.value = fn.clave;
-    op.textContent = `${fn.nombre} — ${fn.formula}`;
-    selFuncion.appendChild(op);
-  });
-  alternarCajaBase();
-}
-
-function alternarCajaBase() {
-  cajaBase.classList.toggle("oculto", selFuncion.value !== "exponencial");
-}
 
 function graficar() {
   ocultarError();
   const datos = {
-    funcion: selFuncion.value,
-    a: $("a").value, b: $("b").value, c: $("c").value, d: $("d").value,
-    base_exp: $("base_exp").value,
-    x_min: $("x_min").value, x_max: $("x_max").value,
-    puntos_tabla: $("puntos_tabla").value,
+    expr: campoExpr.value,
+    x_min: $("x_min").value,
+    x_max: $("x_max").value,
+    puntos: $("puntos_tabla").value,
   };
   try {
     const data = calcular(datos);
     dibujarGrafica(data);
-    pintarResumen(data.resumen);
+    $("etq-g").textContent = `y = ${data.expr}`;
+    pintarResumen(data);
     pintarTabla(data.tabla);
-    $("etq-f").textContent = `f(x) = ${data.formula_f.replace("f(x) = ", "")}`;
-    $("etq-g").textContent = data.formula_g;
-    $("gg-formula").textContent = data.formula_geogebra;
   } catch (e) {
-    mostrarError(e.message || "No se pudo calcular con esos valores.");
+    mostrarError(e.message || "No se pudo graficar con esa función.");
   }
 }
 
 function dibujarGrafica(data) {
-  const serieF = data.serie_f.map((p) => ({ x: p[0], y: p[1] }));
-  const serieG = data.serie_g.map((p) => ({ x: p[0], y: p[1] }));
+  const serie = data.serie.map((p) => ({ x: p[0], y: p[1] }));
 
   if (grafico) {
-    grafico.data.datasets[0].data = serieF;
-    grafico.data.datasets[1].data = serieG;
+    grafico.data.datasets[0].data = serie;
     grafico.update();
     return;
   }
@@ -71,18 +50,14 @@ function dibujarGrafica(data) {
     type: "line",
     data: {
       datasets: [
-        { label: "f(x) original", data: serieF, borderColor: COLOR.acento2,
-          borderDash: [5, 5], borderWidth: 1.75, pointRadius: 0, tension: 0.18, spanGaps: false },
-        { label: "g(x) transformada", data: serieG, borderColor: COLOR.acento,
+        { label: "y", data: serie, borderColor: COLOR.acento,
           borderWidth: 3, pointRadius: 0, tension: 0.18, spanGaps: false,
-          // Relleno muy sutil bajo la curva protagonista
           backgroundColor: "rgba(232,232,234,.05)", fill: true },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      // Curva "dibujándose" trazo a trazo en el primer render
       animation: reduceMotion ? false : { duration: 900, easing: "easeInOutCubic" },
       interaction: { mode: "nearest", intersect: false },
       plugins: {
@@ -93,7 +68,7 @@ function dibujarGrafica(data) {
           titleFont: { family: "Space Grotesk" }, bodyFont: { family: "Inter" },
           callbacks: {
             title: (it) => `x = ${(+it[0].parsed.x).toFixed(2)}`,
-            label: (it) => `${it.dataset.label.split(" ")[0]} = ${(+it.parsed.y).toFixed(3)}`,
+            label: (it) => `y = ${(+it.parsed.y).toFixed(3)}`,
           },
         },
       },
@@ -107,15 +82,32 @@ function dibujarGrafica(data) {
   });
 }
 
-function pintarResumen(frases) {
+/* Lee la tabla ya calculada y arma frases simples de interpretación. */
+function pintarResumen(data) {
   const ul = $("resumen");
   ul.innerHTML = "";
+  const frases = [];
+  frases.push(`y = ${data.expr}`);
+
+  const def = data.tabla.filter((f) => f.y !== null);
+  if (def.length === 0) {
+    frases.push("Ningún punto del intervalo está dentro del dominio. Prueba otro rango de x.");
+  } else {
+    const ys = def.map((f) => f.y);
+    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const pMin = def.find((f) => f.y === yMin), pMax = def.find((f) => f.y === yMax);
+    frases.push(`En este intervalo, el valor más bajo es y = ${yMin} (en x = ${pMin.x}).`);
+    frases.push(`El valor más alto es y = ${yMax} (en x = ${pMax.x}).`);
+    if (def.length < data.tabla.length) {
+      frases.push("Algunos puntos quedan fuera del dominio (marcados con “—”).");
+    }
+  }
+
   frases.forEach((f) => {
     const li = document.createElement("li");
     li.textContent = f;
     ul.appendChild(li);
   });
-  // Entrada escalonada de las frases (GSAP)
   if (!reduceMotion && window.gsap) {
     gsap.from("#resumen li", { opacity: 0, x: -14, duration: 0.4, stagger: 0.05, ease: "power2.out", overwrite: true });
   }
@@ -127,7 +119,7 @@ function pintarTabla(filas) {
   const celda = (v) => (v === null || v === undefined ? "—" : v);
   filas.forEach((f) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${celda(f.x)}</td><td>${celda(f.fx)}</td><td>${celda(f.gx)}</td>`;
+    tr.innerHTML = `<td>${celda(f.x)}</td><td>${celda(f.y)}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -136,20 +128,28 @@ function mostrarError(txt) { msgError.textContent = txt; msgError.classList.remo
 function ocultarError() { msgError.classList.add("oculto"); }
 
 function restablecer() {
-  $("a").value = 1; $("b").value = 1; $("c").value = 0; $("d").value = 0;
-  $("x_min").value = -10; $("x_max").value = 10; $("puntos_tabla").value = 9; $("base_exp").value = 2;
+  campoExpr.value = "2*(x-1)^2+3";
+  $("x_min").value = -10; $("x_max").value = 10; $("puntos_tabla").value = 9;
   graficar();
 }
 
 // Re-graficar en vivo al escribir, con debounce
 let t = null;
 function graficarVivo() { clearTimeout(t); t = setTimeout(graficar, 160); }
-["a", "b", "c", "d", "base_exp", "x_min", "x_max", "puntos_tabla"].forEach((id) =>
+["expr", "x_min", "x_max", "puntos_tabla"].forEach((id) =>
   $(id).addEventListener("input", graficarVivo)
 );
-selFuncion.addEventListener("change", () => { alternarCajaBase(); graficar(); });
 $("btn-graficar").addEventListener("click", graficar);
 $("btn-reset").addEventListener("click", restablecer);
+
+// Chips de ejemplo: colocan la expresión y grafican
+document.querySelectorAll(".ejemplos .chip").forEach((chip) =>
+  chip.addEventListener("click", () => {
+    campoExpr.value = chip.dataset.expr;
+    graficar();
+    if (!reduceMotion && window.gsap) gsap.fromTo(chip, { scale: 0.9 }, { scale: 1, duration: 0.3, ease: "back.out(3)" });
+  })
+);
 
 /* ---------- Animaciones de página con GSAP ---------- */
 function animarEntrada() {
@@ -157,7 +157,6 @@ function animarEntrada() {
     document.querySelectorAll(".anim-init").forEach((el) => (el.style.opacity = 1));
     return;
   }
-  // Entrada orquestada: cabecera primero, luego paneles
   const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
   tl.fromTo(".cabecera .anim-init",
         { opacity: 0, y: 26 },
@@ -166,10 +165,8 @@ function animarEntrada() {
         { opacity: 0, y: 34 },
         { opacity: 1, y: 0, duration: 0.7, stagger: 0.12 }, 0.25);
 
-  // La marca con un brillo de entrada
   gsap.fromTo(".marca", { scale: 0.9 }, { scale: 1, duration: 0.5, ease: "back.out(2)", delay: 0.1 });
 
-  // Aurora que respira (loop suave)
   gsap.to(".aurora .b1", { x: 60, y: 40, scale: 1.15, duration: 9, repeat: -1, yoyo: true, ease: "sine.inOut" });
   gsap.to(".aurora .b2", { x: -50, y: -30, scale: 1.1, duration: 11, repeat: -1, yoyo: true, ease: "sine.inOut" });
   gsap.to(".aurora .b3", { x: 40, y: -50, scale: 1.2, duration: 13, repeat: -1, yoyo: true, ease: "sine.inOut" });
@@ -180,25 +177,5 @@ $("btn-graficar").addEventListener("click", () => {
   if (!reduceMotion && window.gsap) gsap.fromTo("#btn-graficar", { scale: 0.96 }, { scale: 1, duration: 0.3, ease: "back.out(3)" });
 });
 
-// Copiar la fórmula de GeoGebra al portapapeles
-$("btn-copiar-gg").addEventListener("click", async () => {
-  const texto = $("gg-formula").textContent.replace(/^g\(x\)\s*=\s*/, "").trim();
-  const btn = $("btn-copiar-gg");
-  try {
-    await navigator.clipboard.writeText(texto);
-  } catch (e) {
-    // Respaldo para navegadores sin API de portapapeles
-    const ta = document.createElement("textarea");
-    ta.value = texto; document.body.appendChild(ta); ta.select();
-    try { document.execCommand("copy"); } catch (_) {}
-    document.body.removeChild(ta);
-  }
-  const prev = btn.textContent;
-  btn.textContent = "¡Copiado!";
-  btn.classList.add("ok");
-  setTimeout(() => { btn.textContent = prev; btn.classList.remove("ok"); }, 1500);
-});
-
-cargarFunciones();
 graficar();
 animarEntrada();

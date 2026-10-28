@@ -118,7 +118,7 @@ body {
 label { display: block; font-size: 12.5px; color: var(--texto-2); margin: 0 0 6px; }
 .pista { color: var(--texto-2); opacity: .7; }
 
-select, input[type="number"] {
+select, input[type="number"], input[type="text"] {
   width: 100%; padding: 10px 11px;
   background: #0d0d10; border: 1px solid var(--borde); border-radius: 10px;
   color: var(--texto); font-family: var(--sans); font-size: 14px;
@@ -128,6 +128,30 @@ select:focus, input:focus {
   outline: none; border-color: var(--acento);
   box-shadow: 0 0 0 3px var(--tenue);
 }
+
+/* Entrada de la función (estilo GeoGebra) */
+.entrada-expr {
+  font-family: "Consolas", "SF Mono", monospace !important;
+  font-size: 16px !important; letter-spacing: .01em;
+  padding: 13px 13px !important;
+}
+.ayuda-expr {
+  margin: 10px 0 0; font-size: 12px; line-height: 1.55; color: var(--texto-2);
+}
+.ayuda-expr code {
+  font-family: "Consolas", "SF Mono", monospace; font-size: 11.5px;
+  background: #0d0d10; border: 1px solid var(--borde); border-radius: 5px;
+  padding: 1px 5px; color: var(--texto);
+}
+.ejemplos { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.chip {
+  flex: 0 0 auto; padding: 6px 11px; border-radius: 999px;
+  border: 1px solid var(--borde-glow); background: var(--panel-2); color: var(--texto);
+  font-family: "Consolas", "SF Mono", monospace; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .1s ease;
+}
+.chip:hover { background: #222228; border-color: var(--acento-2); }
+.chip:active { transform: translateY(1px); }
 
 .rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
 
@@ -164,31 +188,6 @@ button:active { transform: translateY(1px) scale(.99); }
 .leyenda.f .exp { color: var(--texto-2); }
 .lienzo-wrap { position: relative; height: 450px; }
 #lienzo { width: 100%; height: 100% !important; }
-
-/* Fórmula lista para pegar en GeoGebra */
-.geogebra {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  margin-top: 16px; padding: 12px 14px;
-  background: #0d0d10; border: 1px solid var(--borde); border-radius: 10px;
-}
-.gg-rotulo {
-  font-family: var(--display); font-size: 10.5px; font-weight: 600;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--texto-2);
-}
-.gg-code {
-  flex: 1; min-width: 160px;
-  font-family: "Consolas", "SF Mono", monospace; font-size: 13.5px;
-  color: var(--texto); background: transparent; padding: 2px 0;
-  user-select: all; word-break: break-all;
-}
-.gg-copy {
-  flex: 0 0 auto; padding: 7px 14px; border-radius: 8px;
-  border: 1px solid var(--borde-glow); background: var(--panel-2); color: var(--texto);
-  font-family: var(--sans); font-size: 12.5px; font-weight: 600; cursor: pointer;
-  transition: background .15s ease, border-color .15s ease, color .15s ease;
-}
-.gg-copy:hover { background: #222228; border-color: var(--acento-2); }
-.gg-copy.ok { background: var(--acento); color: #0b0b0d; border-color: var(--acento); }
 
 /* ---------- Inferior ---------- */
 .inferior {

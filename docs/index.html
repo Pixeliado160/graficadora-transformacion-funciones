@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Graficadora de Transformación de Funciones</title>
-  <meta name="description" content="Herramienta interactiva de precálculo: visualiza cómo se transforma una función al modificar los parámetros a, b, c y d.">
+  <title>Graficadora de Funciones</title>
+  <meta name="description" content="Herramienta interactiva de precálculo: escribe una función tal como en GeoGebra y visualízala al instante.">
   <link rel="stylesheet" href="css/estilos.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
@@ -18,9 +18,9 @@
 
   <header class="cabecera">
     <div class="marca anim-init">Precálculo · Proyecto Final</div>
-    <h1 class="anim-init">Graficadora de <span class="grad">transformación de funciones</span></h1>
+    <h1 class="anim-init">Graficadora de <span class="grad">funciones</span></h1>
     <p class="formula-hero anim-init">
-      g(x) = <span class="var">a</span>·f(<span class="var">b</span>(x − <span class="var">c</span>)) + <span class="var">d</span>
+      Escríbela igual que en <span class="var">GeoGebra</span>
     </p>
     <p class="enlaces-top anim-init">
       Motor matemático en Python (Flask); esta demo lo reimplementa en JavaScript para correr sin servidor.
@@ -34,22 +34,23 @@
   <section class="lienzo-area">
     <aside class="controles panel-glass anim-init" aria-label="Controles">
       <div class="grupo">
-        <h2 class="rotulo">Función base</h2>
-        <label for="funcion">Función madre f(x)</label>
-        <select id="funcion"></select>
-        <div id="caja-base" class="oculto" style="margin-top:12px">
-          <label for="base_exp">Base de la exponencial (a &gt; 0, a ≠ 1)</label>
-          <input type="number" id="base_exp" value="2" step="0.1">
-        </div>
-      </div>
-
-      <div class="grupo">
-        <h2 class="rotulo">Parámetros</h2>
-        <div class="rejilla">
-          <div class="campo"><label for="a">a <span class="pista">vertical</span></label><input type="number" id="a" value="1" step="0.5"></div>
-          <div class="campo"><label for="b">b <span class="pista">horizontal</span></label><input type="number" id="b" value="1" step="0.5"></div>
-          <div class="campo"><label for="c">c <span class="pista">← →</span></label><input type="number" id="c" value="0" step="0.5"></div>
-          <div class="campo"><label for="d">d <span class="pista">↑ ↓</span></label><input type="number" id="d" value="0" step="0.5"></div>
+        <h2 class="rotulo">Función</h2>
+        <label for="expr">Escríbela como en GeoGebra</label>
+        <input type="text" id="expr" class="entrada-expr" value="2*(x-1)^2+3"
+               spellcheck="false" autocapitalize="off" autocomplete="off"
+               placeholder="p. ej. 2*(x-1)^2+3">
+        <p class="ayuda-expr">
+          Usa <code>x</code>, <code>+ - * /</code>, potencias con <code>^</code> y paréntesis.
+          Funciones: <code>sqrt</code>, <code>abs</code>, <code>sin</code>, <code>cos</code>, <code>tan</code>,
+          <code>ln</code>, <code>log</code>, <code>exp</code>. Constantes: <code>pi</code>, <code>e</code>.
+        </p>
+        <div class="ejemplos" aria-label="Ejemplos">
+          <button type="button" class="chip" data-expr="2*(x-1)^2+3">2·(x−1)²+3</button>
+          <button type="button" class="chip" data-expr="sqrt(x-2)">√(x−2)</button>
+          <button type="button" class="chip" data-expr="0.5*abs(x)+2">½·|x|+2</button>
+          <button type="button" class="chip" data-expr="2^x">2ˣ</button>
+          <button type="button" class="chip" data-expr="sin(x)">sin(x)</button>
+          <button type="button" class="chip" data-expr="-x^2+4">−x²+4</button>
         </div>
       </div>
 
@@ -70,27 +71,21 @@
 
     <div class="grafica panel-glass anim-init">
       <div class="grafica-cab">
-        <span class="leyenda f"><span class="trazo"></span><span id="etq-f" class="exp">f(x) original</span></span>
-        <span class="leyenda g"><span class="trazo"></span><span id="etq-g" class="exp">g(x) transformada</span></span>
+        <span class="leyenda g"><span class="trazo"></span><span id="etq-g" class="exp">y = …</span></span>
       </div>
       <div class="lienzo-wrap"><canvas id="lienzo"></canvas></div>
-      <div class="geogebra">
-        <span class="gg-rotulo">Pegar en GeoGebra</span>
-        <code id="gg-formula" class="gg-code">g(x) = x</code>
-        <button id="btn-copiar-gg" class="gg-copy" type="button" aria-label="Copiar fórmula de GeoGebra">Copiar</button>
-      </div>
     </div>
   </section>
 
   <section class="inferior">
     <div class="bloque panel-glass anim-init">
-      <h2>Qué le pasó a la función</h2>
+      <h2>Cómo leer esta gráfica</h2>
       <ul id="resumen" class="resumen"></ul>
     </div>
     <div class="bloque panel-glass anim-init">
       <h2>Puntos clave</h2>
       <table class="tabla" id="tabla-puntos">
-        <thead><tr><th>x</th><th>f(x)</th><th>g(x)</th></tr></thead>
+        <thead><tr><th>x</th><th>y</th></tr></thead>
         <tbody></tbody>
       </table>
       <p class="nota">“—” marca puntos fuera del dominio de la función.</p>
@@ -99,7 +94,7 @@
 
   <footer class="pie">
     Motor oficial en Python (Flask) · Interfaz en HTML, CSS y JavaScript ·
-    <span class="exp">g(x) = a·f(b(x − c)) + d</span>
+    <span class="exp">escribe la función igual que en GeoGebra</span>
   </footer>
 
 </div>

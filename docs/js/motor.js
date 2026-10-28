@@ -1,198 +1,208 @@
 /* ==========================================================================
-   motor.js — Versión JavaScript del motor matemático
+   motor.js — Evaluador de expresiones estilo GeoGebra (demo web)
    --------------------------------------------------------------------------
-   Esta es la MISMA lógica que el backend de Python (motor/funciones.py,
-   transformaciones.py y validacion.py), portada a JavaScript para que la
-   demo pública de GitHub Pages funcione sin servidor.
+   El usuario escribe UNA función tal como en GeoGebra, por ejemplo:
+        2*(x-1)^2 + 3        sqrt(x-2)        0.5*abs(x)+2        2^x
+   y este motor la convierte en una función evaluable y en una tabla de
+   puntos, SIN usar eval (intérprete propio: tokenizador + parser Pratt).
 
-   El proyecto "oficial" usa Python; esta copia existe solo para la demo web.
+   El proyecto "oficial" usa Python (Flask); esta copia web existe solo para
+   la demo pública de GitHub Pages y para comparar contra GeoGebra.
    ========================================================================== */
 
-// ---------- Funciones madre y sus dominios (espejo de funciones.py) ----------
-const FUNCIONES_BASE = {
-  lineal:         { nombre: "Línea",          formula: "f(x) = x",            f: x => x,          dominio: () => true },
-  cuadratica:     { nombre: "Cuadrática",     formula: "f(x) = x²",           f: x => x * x,      dominio: () => true },
-  cubica:         { nombre: "Cúbica",         formula: "f(x) = x³",           f: x => x ** 3,     dominio: () => true },
-  valor_absoluto: { nombre: "Valor Absoluto", formula: "f(x) = |x|",          f: x => Math.abs(x),dominio: () => true },
-  raiz_cuadrada:  { nombre: "Raíz Cuadrada",  formula: "f(x) = √x",           f: x => Math.sqrt(x), dominio: x => x >= 0 },
-  exponencial:    { nombre: "Exponencial",    formula: "f(x) = aˣ (a>0, a≠1)", f: null,           dominio: () => true, requiereBase: true },
+/* -------------------- 1. Tokenizador -------------------- */
+function tokenizar(entrada) {
+  const s = entrada.replace(/−/g, "-").replace(/·/g, "*").replace(/\s+/g, "");
+  const tokens = [];
+  let i = 0;
+  const esDigito = (c) => c >= "0" && c <= "9";
+  const esLetra = (c) => /[a-zA-Z]/.test(c);
+
+  while (i < s.length) {
+    const c = s[i];
+    if (esDigito(c) || (c === "." && esDigito(s[i + 1]))) {
+      let num = "";
+      while (i < s.length && (esDigito(s[i]) || s[i] === ".")) num += s[i++];
+      tokens.push({ t: "num", v: parseFloat(num) });
+    } else if (esLetra(c)) {
+      let id = "";
+      while (i < s.length && (esLetra(s[i]) || esDigito(s[i]))) id += s[i++];
+      tokens.push({ t: "id", v: id.toLowerCase() });
+    } else if ("+-*/^(),".includes(c)) {
+      tokens.push({ t: c });
+      i++;
+    } else {
+      throw new Error(`Carácter no válido: "${c}"`);
+    }
+  }
+  tokens.push({ t: "eof" });
+  return tokens;
+}
+
+/* -------------------- 2. Parser (Pratt) -------------------- */
+// Constantes y funciones permitidas (nombres de GeoGebra y comunes)
+const CONSTANTES = { pi: Math.PI, e: Math.E };
+const FUNCIONES_MAT = {
+  sqrt: Math.sqrt, abs: Math.abs,
+  sin: Math.sin, cos: Math.cos, tan: Math.tan,
+  asin: Math.asin, acos: Math.acos, atan: Math.atan,
+  ln: Math.log, log: Math.log10, exp: Math.exp,
+  floor: Math.floor, ceil: Math.ceil, round: Math.round,
+  sign: Math.sign, cbrt: Math.cbrt,
 };
 
-function construirFuncionBase(clave, baseExp = 2) {
-  if (clave === "exponencial") {
-    if (baseExp <= 0 || baseExp === 1) throw new Error("La base de la exponencial debe ser > 0 y distinta de 1.");
-    return x => Math.pow(baseExp, x);
+function parsear(tokens) {
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const next = () => tokens[pos++];
+  const esperar = (t) => {
+    if (peek().t !== t) throw new Error(`Se esperaba "${t}"`);
+    return next();
+  };
+
+  // Gramática por niveles (de menor a mayor prioridad):
+  //   suma:   term (('+'|'-') term)*
+  //   term:   unario (('*'|'/') unario)*
+  //   unario: '-' unario | '+' unario | potencia
+  //   pot:    primario ('^' unario)?       (^ der-asociativo; -x^2 = -(x^2))
+  function parseExpr() { return parseSuma(); }
+
+  function parseSuma() {
+    let izq = parseTerm();
+    while (peek().t === "+" || peek().t === "-") {
+      const op = next().t;
+      izq = { op, l: izq, r: parseTerm() };
+    }
+    return izq;
   }
-  return FUNCIONES_BASE[clave].f;
+
+  function parseTerm() {
+    let izq = parseUnario();
+    while (peek().t === "*" || peek().t === "/") {
+      const op = next().t;
+      izq = { op, l: izq, r: parseUnario() };
+    }
+    return izq;
+  }
+
+  function parseUnario() {
+    if (peek().t === "-") { next(); return { op: "neg", r: parseUnario() }; }
+    if (peek().t === "+") { next(); return parseUnario(); }
+    return parsePotencia();
+  }
+
+  function parsePotencia() {
+    const base = parsePrimario();
+    if (peek().t === "^") {
+      next();
+      return { op: "^", l: base, r: parseUnario() }; // permite 2^-x y x^2
+    }
+    return base;
+  }
+
+  function parsePrimario() {
+    const tk = peek();
+    if (tk.t === "num") { next(); return { num: tk.v }; }
+    if (tk.t === "(") {
+      next(); const e = parseExpr(1); esperar(")"); return e;
+    }
+    if (tk.t === "id") {
+      next();
+      // ¿llamada a función?  nombre(...)
+      if (peek().t === "(") {
+        next();
+        const arg = parseExpr(1);
+        esperar(")");
+        if (!FUNCIONES_MAT[tk.v]) throw new Error(`Función desconocida: "${tk.v}"`);
+        return { fn: tk.v, arg };
+      }
+      if (tk.v === "x") return { varx: true };
+      if (tk.v in CONSTANTES) return { num: CONSTANTES[tk.v] };
+      throw new Error(`Símbolo desconocido: "${tk.v}" (use x, o funciones como sqrt, abs…)`);
+    }
+    throw new Error("Expresión incompleta.");
+  }
+
+  const arbol = parseExpr(1);
+  esperar("eof");
+  return arbol;
 }
 
-function listarFunciones() {
-  return Object.entries(FUNCIONES_BASE).map(([clave, v]) => ({
-    clave, nombre: v.nombre, formula: v.formula,
-  }));
+/* -------------------- 3. Evaluación del árbol -------------------- */
+function evalNodo(n, x) {
+  if ("num" in n) return n.num;
+  if ("varx" in n) return x;
+  if ("fn" in n) return FUNCIONES_MAT[n.fn](evalNodo(n.arg, x));
+  if (n.op === "neg") return -evalNodo(n.r, x);
+  const l = evalNodo(n.l, x), r = evalNodo(n.r, x);
+  switch (n.op) {
+    case "+": return l + r;
+    case "-": return l - r;
+    case "*": return l * r;
+    case "/": return l / r;
+    case "^": return Math.pow(l, r);
+  }
+  throw new Error("Operación no soportada.");
 }
 
-// ---------- Validación (espejo de validacion.py) ----------
+/* Compila una expresión de texto a una función f(x). Lanza Error si es inválida. */
+function compilar(expr) {
+  if (!expr || !expr.trim()) throw new Error("Escribe una función, por ejemplo: 2*(x-1)^2+3");
+  const arbol = parsear(tokenizar(expr));
+  return (x) => {
+    const y = evalNodo(arbol, x);
+    return Number.isFinite(y) ? y : null; // fuera de dominio / indefinido -> hueco
+  };
+}
+
+/* -------------------- 4. Muestreo y tabla (igual criterio que antes) -------------------- */
+function muestrear(f, xMin, xMax, n) {
+  if (n < 2) n = 2;
+  const paso = (xMax - xMin) / (n - 1);
+  const serie = [];
+  for (let i = 0; i < n; i++) {
+    const x = xMin + i * paso;
+    let y;
+    try { y = f(x); } catch (_) { y = null; }
+    serie.push([x, y === null || !Number.isFinite(y) ? null : y]);
+  }
+  return serie;
+}
+
+function tablaPuntos(f, xMin, xMax, cantidad) {
+  if (cantidad < 5) cantidad = 5;
+  const paso = (xMax - xMin) / (cantidad - 1);
+  const r4 = (v) => (v === null ? null : Math.round(v * 10000) / 10000);
+  const filas = [];
+  for (let i = 0; i < cantidad; i++) {
+    const x = xMin + i * paso;
+    let y;
+    try { y = f(x); } catch (_) { y = null; }
+    if (y !== null && !Number.isFinite(y)) y = null;
+    filas.push({ x: r4(x), y: r4(y) });
+  }
+  return filas;
+}
+
+/* -------------------- 5. Validación de parámetros de la interfaz -------------------- */
 function aNumero(valor, defecto) {
   if (valor === null || valor === undefined || valor === "") return defecto;
   const n = parseFloat(valor);
   return Number.isNaN(n) ? defecto : n;
 }
 
-function validarParametros(d) {
-  const clave = (d.funcion || "").trim();
-  if (!FUNCIONES_BASE[clave]) throw new Error("Debe seleccionar una función base válida.");
-
-  const a = aNumero(d.a, 1), b = aNumero(d.b, 1), c = aNumero(d.c, 0), dd = aNumero(d.d, 0);
-  const baseExp = aNumero(d.base_exp, 2);
-  if (clave === "exponencial" && (baseExp <= 0 || baseExp === 1))
-    throw new Error("La base de la exponencial debe ser > 0 y distinta de 1.");
-
-  let xMin = aNumero(d.x_min, -10), xMax = aNumero(d.x_max, 10);
+/* API local: recibe { expr, x_min, x_max, puntos } y devuelve lo que pinta la web */
+function calcular(datos) {
+  const f = compilar(datos.expr);
+  let xMin = aNumero(datos.x_min, -10), xMax = aNumero(datos.x_max, 10);
   if (xMin >= xMax) { xMin = -10; xMax = 10; }
-
-  let puntos = Math.trunc(aNumero(d.puntos_tabla, 9));
+  let puntos = Math.trunc(aNumero(datos.puntos, 9));
   if (puntos < 5) puntos = 5;
 
-  return { funcion: clave, a, b, c, d: dd, base_exp: baseExp, x_min: xMin, x_max: xMax, puntos_tabla: puntos };
-}
-
-// ---------- Transformaciones (espejo de transformaciones.py) ----------
-function evaluarG(f, x, a, b, c, d, dominio) {
-  const u = b * (x - c);
-  if (dominio && !dominio(u)) return null;
-  const y = a * f(u) + d;
-  return Number.isFinite(y) ? y : null;
-}
-
-function muestrear(clave, a, b, c, d, xMin, xMax, n, baseExp) {
-  const info = FUNCIONES_BASE[clave];
-  const f = construirFuncionBase(clave, baseExp);
-  const dom = info.dominio;
-  if (n < 2) n = 2;
-  const paso = (xMax - xMin) / (n - 1);
-  const serieF = [], serieG = [];
-  for (let i = 0; i < n; i++) {
-    const x = xMin + i * paso;
-    let yf = dom(x) ? f(x) : null;
-    if (yf !== null && !Number.isFinite(yf)) yf = null;
-    const yg = evaluarG(f, x, a, b, c, d, dom);
-    serieF.push([x, yf]);
-    serieG.push([x, yg]);
-  }
-  return { serieF, serieG };
-}
-
-function tablaPuntos(clave, a, b, c, d, xMin, xMax, cantidad, baseExp) {
-  if (cantidad < 5) cantidad = 5;
-  const info = FUNCIONES_BASE[clave];
-  const f = construirFuncionBase(clave, baseExp);
-  const dom = info.dominio;
-  const paso = (xMax - xMin) / (cantidad - 1);
-  const r4 = v => (v === null ? null : Math.round(v * 10000) / 10000);
-  const filas = [];
-  for (let i = 0; i < cantidad; i++) {
-    const x = xMin + i * paso;
-    let yf = dom(x) ? f(x) : null;
-    if (yf !== null && !Number.isFinite(yf)) yf = null;
-    const yg = evaluarG(f, x, a, b, c, d, dom);
-    filas.push({ x: r4(x), fx: r4(yf), gx: r4(yg) });
-  }
-  return filas;
-}
-
-const g = v => (Number.isInteger(v) ? String(v) : String(v)); // formato compacto
-
-function resumenInterpretativo(clave, a, b, c, d, baseExp) {
-  const info = FUNCIONES_BASE[clave];
-  const ef = [];
-  if (clave === "exponencial") ef.push(`Partimos de la función base ${info.nombre}: f(x) = ${g(baseExp)}ˣ.`);
-  else ef.push(`Partimos de la función base ${info.nombre}: ${info.formula}.`);
-
-  const aa = Math.abs(a);
-  if (aa > 1) ef.push(`a = ${g(a)}: estiramiento vertical por un factor de ${g(aa)}.`);
-  else if (aa > 0 && aa < 1) ef.push(`a = ${g(a)}: compresión vertical por un factor de ${g(aa)}.`);
-  if (a < 0) ef.push(`a = ${g(a)}: como a < 0, hay reflexión respecto al eje X.`);
-  if (a === 1) ef.push("a = 1: no hay cambio de escala ni reflexión vertical.");
-
-  const bb = Math.abs(b);
-  if (bb > 1) ef.push(`b = ${g(b)}: compresión horizontal por un factor de 1/${g(bb)}.`);
-  else if (bb > 0 && bb < 1) ef.push(`b = ${g(b)}: estiramiento horizontal por un factor de 1/${g(bb)}.`);
-  if (b < 0) ef.push(`b = ${g(b)}: como b < 0, hay reflexión respecto al eje Y.`);
-  if (b === 1) ef.push("b = 1: no hay cambio de escala ni reflexión horizontal.");
-
-  if (c > 0) ef.push(`c = ${g(c)}: traslación hacia la DERECHA ${g(c)} unidades.`);
-  else if (c < 0) ef.push(`c = ${g(c)}: traslación hacia la IZQUIERDA ${g(Math.abs(c))} unidades.`);
-  else ef.push("c = 0: no hay desplazamiento horizontal.");
-
-  if (d > 0) ef.push(`d = ${g(d)}: traslación hacia ARRIBA ${g(d)} unidades.`);
-  else if (d < 0) ef.push(`d = ${g(d)}: traslación hacia ABAJO ${g(Math.abs(d))} unidades.`);
-  else ef.push("d = 0: no hay desplazamiento vertical.");
-
-  return ef;
-}
-
-function formulaG(clave, a, b, c, d, baseExp) {
-  const cuerpos = {
-    lineal: "{u}", cuadratica: "({u})²", cubica: "({u})³",
-    valor_absoluto: "|{u}|", raiz_cuadrada: "√({u})",
-    exponencial: `${g(baseExp)}^({u})`,
-  };
-  let u;
-  if (c === 0) u = b !== 1 ? `${g(b)}x` : "x";
-  else {
-    const signo = c > 0 ? "−" : "+";
-    u = b !== 1 ? `${g(b)}(x ${signo} ${g(Math.abs(c))})` : `(x ${signo} ${g(Math.abs(c))})`;
-  }
-  const cuerpo = cuerpos[clave].replace("{u}", u);
-  const pref = a === 1 ? "" : `${g(a)}·`;
-  let suf = "";
-  if (d > 0) suf = ` + ${g(d)}`;
-  else if (d < 0) suf = ` − ${g(Math.abs(d))}`;
-  return `g(x) = ${pref}${cuerpo}${suf}`;
-}
-
-// ---------- Fórmula en sintaxis GeoGebra (copiar y pegar directo) ----------
-// Devuelve g(x) exactamente como se teclea en GeoGebra: con *, ^, abs(), sqrt().
-function formulaGeoGebra(clave, a, b, c, d, baseExp) {
-  // argumento interno u = b(x - c)
-  let u;
-  if (c === 0) u = b !== 1 ? `${g(b)}*x` : "x";
-  else {
-    const signo = c > 0 ? "-" : "+";
-    const nucleo = `(x ${signo} ${g(Math.abs(c))})`;
-    u = b !== 1 ? `${g(b)}*${nucleo}` : nucleo;
-  }
-  // Para potencias necesitamos u entre paréntesis; si u ya es (…) no duplicamos.
-  const uParen = u.startsWith("(") ? u : `(${u})`;
-  // cuerpo f(u) según la función, en sintaxis GeoGebra
-  const cuerpos = {
-    lineal: u,
-    cuadratica: `${uParen}^2`,
-    cubica: `${uParen}^3`,
-    valor_absoluto: `abs(${u})`,
-    raiz_cuadrada: `sqrt(${u})`,
-    exponencial: `${g(baseExp)}^(${u})`,
-  };
-  let expr = cuerpos[clave];
-  if (a !== 1) expr = `${g(a)}*${expr}`;
-  if (d > 0) expr = `${expr} + ${g(d)}`;
-  else if (d < 0) expr = `${expr} - ${g(Math.abs(d))}`;
-  return `g(x) = ${expr}`;
-}
-
-/* API local que imita la respuesta del backend Python */
-function calcular(datos) {
-  const p = validarParametros(datos);
-  const { serieF, serieG } = muestrear(p.funcion, p.a, p.b, p.c, p.d, p.x_min, p.x_max, 400, p.base_exp);
-  const tabla = tablaPuntos(p.funcion, p.a, p.b, p.c, p.d, p.x_min, p.x_max, p.puntos_tabla, p.base_exp);
-  const resumen = resumenInterpretativo(p.funcion, p.a, p.b, p.c, p.d, p.base_exp);
-  const formula = formulaG(p.funcion, p.a, p.b, p.c, p.d, p.base_exp);
-  const geogebra = formulaGeoGebra(p.funcion, p.a, p.b, p.c, p.d, p.base_exp);
-  const info = FUNCIONES_BASE[p.funcion];
   return {
-    ok: true, funcion_nombre: info.nombre, formula_f: info.formula, formula_g: formula,
-    formula_geogebra: geogebra,
-    serie_f: serieF, serie_g: serieG, tabla, resumen,
+    ok: true,
+    expr: datos.expr.trim(),
+    serie: muestrear(f, xMin, xMax, 400),
+    tabla: tablaPuntos(f, xMin, xMax, puntos),
   };
 }
