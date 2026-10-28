@@ -37,28 +37,64 @@ function graficar() {
   }
 }
 
-function dibujarGrafica(data) {
-  const serie = data.serie.map((p) => ({ x: p[0], y: p[1] }));
-
-  // Límites X = intervalo exacto pedido (sin margen, como GeoGebra)
+/* Calcula una ventana cuadrada (escala 1:1 en X e Y, como GeoGebra):
+   el eje X cubre el intervalo pedido y el eje Y se deduce de la relación
+   de aspecto del lienzo, centrado para que el origen quede visible. */
+function ventanaCartesiana(serie) {
   const xs = serie.map((p) => p.x);
   const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const anchoX = xMax - xMin;
 
-  // Límites Y: según los datos, pero SIEMPRE incluyendo el 0 (origen visible)
-  // y con un pequeño respiro arriba/abajo.
+  // Relación de aspecto real del área de dibujo (px alto / px ancho)
+  const wrap = document.querySelector(".lienzo-wrap");
+  const w = wrap ? wrap.clientWidth : 760;
+  const h = wrap ? wrap.clientHeight : 450;
+  const aspecto = h / Math.max(w, 1);
+
+  // Mismas unidades por píxel => alto en unidades = ancho * aspecto
+  const altoY = anchoX * aspecto;
+
+  // Ventana vertical centrada en el origen (como GeoGebra por defecto): el eje
+  // X queda a media altura y la curva puede salir por arriba/abajo sin aplastarse.
+  // Si la función es "pequeña" y cabe entera con margen, la encuadramos; si no,
+  // mantenemos el origen centrado para conservar la forma 1:1.
   const ys = serie.map((p) => p.y).filter((y) => y !== null && Number.isFinite(y));
-  let yMin = 0, yMax = 0;
-  if (ys.length) { yMin = Math.min(0, ...ys); yMax = Math.max(0, ...ys); }
-  if (yMin === yMax) { yMin -= 1; yMax += 1; }
-  const resp = (yMax - yMin) * 0.08;
-  yMin -= resp; yMax += resp;
+  let centro = 0;
+  if (ys.length) {
+    const lo = Math.min(...ys), hi = Math.max(...ys);
+    const medio = (lo + hi) / 2;
+    // Solo recentramos si todo el recorrido cabe cómodo en la ventana cuadrada.
+    if (hi - lo <= altoY * 0.9) centro = medio;
+  }
+  let yMin = centro - altoY / 2, yMax = centro + altoY / 2;
+
+  // Paso "bonito" de cuadrícula, común a ambos ejes (cuadros cuadrados)
+  const paso = pasoBonito(anchoX / 10);
+  return { xMin, xMax, yMin, yMax, paso };
+}
+
+// Devuelve un paso agradable (1, 2, 5, 10, 20, 50…) cercano al valor dado.
+function pasoBonito(v) {
+  if (!Number.isFinite(v) || v <= 0) return 1;
+  const exp = Math.floor(Math.log10(v));
+  const base = Math.pow(10, exp);
+  const frac = v / base;
+  const m = frac < 1.5 ? 1 : frac < 3 ? 2 : frac < 7 ? 5 : 10;
+  return m * base;
+}
+
+function dibujarGrafica(data) {
+  const serie = data.serie.map((p) => ({ x: p[0], y: p[1] }));
+  const { xMin, xMax, yMin, yMax, paso } = ventanaCartesiana(serie);
 
   if (grafico) {
     grafico.data.datasets[0].data = serie;
     grafico.options.scales.x.min = xMin;
     grafico.options.scales.x.max = xMax;
+    grafico.options.scales.x.ticks.stepSize = paso;
     grafico.options.scales.y.min = yMin;
     grafico.options.scales.y.max = yMax;
+    grafico.options.scales.y.ticks.stepSize = paso;
     grafico.update();
     return;
   }
@@ -101,7 +137,7 @@ function dibujarGrafica(data) {
           border: { display: false },
           ticks: {
             color: COLOR.texto2, font: { family: "Inter", size: 11 },
-            maxRotation: 0, autoSkipPadding: 14,
+            maxRotation: 0, autoSkipPadding: 14, stepSize: paso,
             // Ocultar el "0" sobre el propio eje para no encimar números
             callback: (v) => (v === 0 ? "" : v),
           },
@@ -116,7 +152,7 @@ function dibujarGrafica(data) {
           border: { display: false },
           ticks: {
             color: COLOR.texto2, font: { family: "Inter", size: 11 },
-            autoSkipPadding: 12,
+            autoSkipPadding: 12, stepSize: paso,
             callback: (v) => (v === 0 ? "" : v),
           },
         },
@@ -179,6 +215,10 @@ function restablecer() {
 // Re-graficar en vivo al escribir, con debounce
 let t = null;
 function graficarVivo() { clearTimeout(t); t = setTimeout(graficar, 160); }
+
+// Al cambiar el tamaño de la ventana, recalcular la ventana cuadrada (escala 1:1)
+let tr_ = null;
+window.addEventListener("resize", () => { clearTimeout(tr_); tr_ = setTimeout(graficar, 200); });
 ["expr", "x_min", "x_max", "puntos_tabla"].forEach((id) =>
   $(id).addEventListener("input", graficarVivo)
 );
