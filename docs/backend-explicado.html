@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 17mm 15mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #1a1f2e; line-height: 1.55; font-size: 11pt; margin: 0;
+  }
+  .portada {
+    text-align: center; padding: 54px 24px 40px;
+    background: #111318; color: #fff; border-radius: 16px; margin-bottom: 26px;
+  }
+  .portada h1 { font-size: 24pt; margin: 0 0 10px; letter-spacing: -.3px; }
+  .portada .sub { font-size: 12.5pt; color: #b7bcc9; margin: 3px 0; }
+  .portada .chip {
+    display: inline-block; margin-top: 18px; padding: 9px 18px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+    border-radius: 10px; font-size: 12pt; letter-spacing: .4px;
+  }
+  h2 {
+    color: #111318; border-bottom: 2px solid #e6e8ee;
+    padding-bottom: 6px; margin-top: 26px; font-size: 15.5pt;
+  }
+  h2 .n {
+    display: inline-block; background: #111318; color: #fff;
+    width: 27px; height: 27px; line-height: 27px; text-align: center;
+    border-radius: 7px; font-size: 12pt; margin-right: 9px; vertical-align: 2px;
+  }
+  h3 { color: #2b3350; margin: 16px 0 5px; font-size: 12.5pt; }
+  p { margin: 7px 0; }
+  .lead { font-size: 11.5pt; color: #3a4254; }
+  .intro {
+    background: #f5f6fa; border: 1px solid #e6e8ee; border-radius: 10px;
+    padding: 14px 18px; margin: 14px 0;
+  }
+  .archivo {
+    border: 1px solid #e2e5ec; border-left: 4px solid #111318;
+    border-radius: 10px; padding: 14px 18px 16px; margin: 14px 0;
+    page-break-inside: avoid;
+  }
+  .archivo .ruta {
+    font-family: "Consolas", monospace; font-size: 11pt; font-weight: 700;
+    color: #111318; background: #eef0f5; padding: 3px 9px; border-radius: 6px;
+    display: inline-block;
+  }
+  .papel { color: #6b7280; font-size: 10pt; font-style: italic; margin: 6px 0 10px; }
+  .analogia {
+    background: #fff7ed; border-left: 4px solid #f59e0b;
+    padding: 9px 14px; border-radius: 8px; margin: 10px 0; font-size: 10.5pt;
+  }
+  .analogia::before { content: "En simple: "; font-weight: 700; color: #b45309; }
+  ul { margin: 7px 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  code {
+    background: #eef0f5; padding: 1px 6px; border-radius: 5px;
+    font-family: "Consolas", monospace; font-size: 10pt; color: #1f2a44;
+  }
+  .func-def { font-family: "Consolas", monospace; font-size: 10pt; color: #0f172a; }
+  .flujo {
+    counter-reset: paso; list-style: none; padding-left: 0; margin: 10px 0;
+  }
+  .flujo li {
+    position: relative; padding: 8px 12px 8px 44px; margin: 8px 0;
+    background: #f5f6fa; border: 1px solid #e6e8ee; border-radius: 9px;
+  }
+  .flujo li::before {
+    counter-increment: paso; content: counter(paso);
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    background: #111318; color: #fff; width: 22px; height: 22px;
+    line-height: 22px; text-align: center; border-radius: 50%; font-size: 10pt; font-weight: 700;
+  }
+  .tag {
+    display: inline-block; background: #eef2ff; color: #3450c4;
+    padding: 2px 9px; border-radius: 20px; font-size: 9pt;
+    font-weight: 600; margin: 2px 3px 2px 0;
+  }
+  .nota {
+    background: #ecfdf5; border-left: 4px solid #10b981;
+    padding: 9px 14px; border-radius: 8px; margin: 12px 0; font-size: 10.5pt;
+  }
+  .page-break { page-break-before: always; }
+  .mapa {
+    font-family: "Consolas", monospace; font-size: 10pt; line-height: 1.7;
+    background: #111318; color: #e8eaf0; border-radius: 10px;
+    padding: 16px 20px; margin: 14px 0; white-space: pre; overflow-x: auto;
+  }
+  .mapa .c { color: #8b93a7; }
+</style>
+</head>
+<body>
+
+  <div class="portada">
+    <h1>El Backend en Python, explicado fácil</h1>
+    <div class="sub">Graficadora de Transformación de Funciones</div>
+    <div class="sub">Qué hace cada archivo · cómo se conectan · para qué sirve cada parte</div>
+    <div class="chip">g(x) = a · f( b (x − c) ) + d</div>
+  </div>
+
+  <div class="intro">
+    <p class="lead"><strong>Idea en una frase:</strong> el backend es el <strong>cerebro</strong> del
+    proyecto. Toda la matemática ocurre aquí, en Python. La página web (el frontend) solo
+    <strong>pregunta</strong> y <strong>dibuja</strong> lo que el cerebro responde.</p>
+    <p>El backend está dividido en <strong>5 archivos</strong> con una regla simple: cada archivo
+    tiene <strong>un solo trabajo</strong>. Así el código es ordenado, fácil de entender y fácil de
+    arreglar. Esto es lo que el enunciado llama “estructura modular”.</p>
+  </div>
+
+  <h3>Mapa de la carpeta</h3>
+  <div class="mapa">backend/
+├── app.py            <span class="c">← la puerta de entrada (servidor web Flask)</span>
+├── requirements.txt  <span class="c">← lista de lo que hay que instalar (Flask)</span>
+└── motor/            <span class="c">← el "cerebro" matemático (un paquete de Python)</span>
+    ├── funciones.py        <span class="c">← QUÉ funciones existen (x², √x, aˣ…)</span>
+    ├── transformaciones.py <span class="c">← CÓMO se transforma y se describe</span>
+    └── validacion.py       <span class="c">← LIMPIA y revisa lo que escribe el usuario</span></div>
+
+  <div class="analogia">piense en un restaurante. <strong>app.py</strong> es el mesero (recibe el
+  pedido y trae el plato). <strong>validacion.py</strong> revisa que el pedido tenga sentido.
+  <strong>funciones.py</strong> es la despensa (los ingredientes base). <strong>transformaciones.py</strong>
+  es el cocinero (prepara el plato con esos ingredientes).</div>
+
+  <!-- ====================== app.py ====================== -->
+  <h2><span class="n">1</span>app.py — el mesero (servidor web)</h2>
+  <div class="archivo">
+    <span class="ruta">backend/app.py</span>
+    <p class="papel">Para qué sirve: es la <strong>puerta de entrada</strong>. Levanta un pequeño
+    servidor web (con Flask) que escucha peticiones del navegador y responde con los resultados.</p>
+
+    <p>Hace tres cosas, cada una en una “ruta” (una dirección web):</p>
+    <ul>
+      <li><code>GET /</code> → entrega la página <code>index.html</code> (el frontend). Es lo que
+      ve el usuario al abrir <code>http://127.0.0.1:5000</code>.</li>
+      <li><code>GET /api/funciones</code> → devuelve la <strong>lista de funciones</strong>
+      disponibles para llenar el menú desplegable.</li>
+      <li><code>POST /api/graficar</code> → recibe los parámetros del usuario
+      (<code>funcion, a, b, c, d…</code>), le pide al cerebro que calcule y devuelve
+      <strong>todo listo</strong>: los puntos de las curvas, la tabla, el resumen y la fórmula.</li>
+    </ul>
+
+    <div class="analogia">es el mesero que recibe tu pedido, se lo pasa a la cocina y te trae el
+    plato servido. No cocina él; solo coordina.</div>
+
+    <p><strong>Cómo pide ayuda a los demás archivos:</strong> arriba tiene la línea
+    <code>from motor import transformaciones, validacion, funciones</code>. Eso significa
+    “voy a usar esos tres ayudantes”. Cuando llega un <code>POST /api/graficar</code>:</p>
+    <ol class="flujo">
+      <li>Le pasa los datos crudos a <code>validacion</code> para limpiarlos.</li>
+      <li>Con los datos ya limpios, le pide a <code>transformaciones</code> las curvas, la tabla,
+      el resumen y la fórmula.</li>
+      <li>Empaqueta todo en un <strong>JSON</strong> (un formato de texto que el navegador entiende)
+      y lo devuelve.</li>
+    </ol>
+    <div class="nota"><strong>Detalle de robustez:</strong> si la validación encuentra un error grave,
+    <code>app.py</code> responde con código <code>400</code> y un mensaje claro, en vez de reventar.</div>
+  </div>
+
+  <div class="archivo">
+    <span class="ruta">backend/requirements.txt</span>
+    <p class="papel">Para qué sirve: es la <strong>lista de la compra</strong> del proyecto.</p>
+    <p>Contiene una sola línea: <code>Flask==3.0.3</code>. Le dice a quien quiera correr el proyecto:
+    “instala Flask y listo”. Se instala con <code>pip install -r requirements.txt</code>. No necesita
+    nada más: toda la matemática está hecha con Python puro.</p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ====================== funciones.py ====================== -->
+  <h2><span class="n">2</span>motor/funciones.py — la despensa</h2>
+  <div class="archivo">
+    <span class="ruta">backend/motor/funciones.py</span>
+    <p class="papel">Para qué sirve: guarda el <strong>catálogo de funciones base</strong> (las
+    “funciones madre” sin transformar) y sabe cuál es el dominio de cada una.</p>
+
+    <p>Tiene un gran diccionario llamado <code>FUNCIONES_BASE</code> con <strong>6 funciones</strong>
+    (el proyecto pedía al menos 5):</p>
+    <ul>
+      <li><span class="tag">Línea</span> f(x) = x</li>
+      <li><span class="tag">Cuadrática</span> f(x) = x²</li>
+      <li><span class="tag">Cúbica</span> f(x) = x³</li>
+      <li><span class="tag">Valor absoluto</span> f(x) = |x|</li>
+      <li><span class="tag">Raíz cuadrada</span> f(x) = √x <em>(solo existe si x ≥ 0)</em></li>
+      <li><span class="tag">Exponencial</span> f(x) = aˣ <em>(con base a &gt; 0 y a ≠ 1)</em></li>
+    </ul>
+    <p>De cada función guarda cuatro cosas: su <strong>nombre</strong> legible, su
+    <strong>fórmula</strong> en texto, la <strong>función matemática</strong> en sí, y su
+    <strong>dominio</strong> (qué valores de x son válidos).</p>
+
+    <div class="analogia">es la despensa con los ingredientes básicos. Nadie cocina aquí; solo se
+    guardan ordenados y etiquetados, listos para usar.</div>
+
+    <h3>Las tres herramientas que ofrece</h3>
+    <ul>
+      <li><code class="func-def">listar_funciones()</code> → entrega la lista corta (clave, nombre,
+      fórmula). La usa <code>app.py</code> para llenar el menú del frontend.</li>
+      <li><code class="func-def">info_funcion(clave)</code> → entrega todos los datos de una función
+      (incluido su dominio). La usa <code>transformaciones.py</code>.</li>
+      <li><code class="func-def">construir_funcion_base(clave, base_exp)</code> → devuelve la función
+      lista para calcular. La exponencial es especial: necesita una base (por defecto 2), y aquí mismo
+      se revisa que la base sea válida (&gt; 0 y ≠ 1).</li>
+    </ul>
+    <div class="nota"><strong>Por qué importa el dominio:</strong> la raíz cuadrada de un número
+    negativo no existe. Guardar el dominio aquí permite que el resto del programa evite ese error
+    automáticamente.</div>
+    <p><strong>Se conecta con:</strong> lo llaman <code>transformaciones.py</code> (para calcular) y
+    <code>validacion.py</code> (para confirmar que la función elegida existe).</p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ====================== transformaciones.py ====================== -->
+  <h2><span class="n">3</span>motor/transformaciones.py — el cocinero</h2>
+  <div class="archivo">
+    <span class="ruta">backend/motor/transformaciones.py</span>
+    <p class="papel">Para qué sirve: es el <strong>corazón matemático</strong>. Aplica el modelo
+    <code>g(x) = a · f(b(x − c)) + d</code> y produce todo lo que se ve en pantalla.</p>
+
+    <p>Toma una función de la despensa y le aplica los cuatro parámetros. Recuerde qué hace cada uno:</p>
+    <ul>
+      <li><strong>a</strong> → estira o encoge <em>a lo alto</em> (y si es negativo, la voltea
+      sobre el eje X).</li>
+      <li><strong>b</strong> → estira o encoge <em>a lo ancho</em> (y si es negativo, la voltea
+      sobre el eje Y).</li>
+      <li><strong>c</strong> → la mueve a la <em>derecha o izquierda</em>.</li>
+      <li><strong>d</strong> → la mueve <em>arriba o abajo</em>.</li>
+    </ul>
+
+    <div class="analogia">es el cocinero. Toma el ingrediente base (la función) y, siguiendo la
+    receta (a, b, c, d), lo transforma en el plato final (la gráfica, la tabla y la explicación).</div>
+
+    <h3>Las cinco herramientas que ofrece</h3>
+    <ul>
+      <li><code class="func-def">evaluar_g(f, x, a, b, c, d)</code> → calcula el valor de g en
+      <strong>un</strong> punto. Si el punto cae fuera del dominio (ej. raíz de negativo), devuelve
+      <code>None</code> (nada) en vez de fallar.</li>
+      <li><code class="func-def">muestrear(...)</code> → genera <strong>400 puntos</strong> entre
+      x mínimo y x máximo y calcula f(x) y g(x) en cada uno. Esto es lo que el frontend usa para
+      <strong>dibujar las dos curvas</strong>. Donde un punto no existe, deja un hueco (no inventa línea).</li>
+      <li><code class="func-def">tabla_puntos(...)</code> → arma la <strong>tabla</strong> de valores
+      (x, f(x), g(x)) con al menos 5 filas, redondeados para que se lean bien.</li>
+      <li><code class="func-def">resumen_interpretativo(...)</code> → genera la
+      <strong>explicación en español</strong>, frase por frase: “a = 2: estiramiento vertical por
+      factor 2”, “c = 1: traslación a la derecha”, etc. Usa condicionales (<code>if</code>) para
+      describir solo lo que de verdad pasó.</li>
+      <li><code class="func-def">formula_g(...)</code> → escribe la <strong>fórmula final ya con
+      números</strong>, por ejemplo <code>g(x) = 2·(3(x − 1))² + 4</code>.</li>
+    </ul>
+
+    <div class="nota"><strong>Dato clave de diseño:</strong> este archivo <em>no sabe nada</em> de
+    HTML, de Flask ni de colores. Solo hace matemática. Por eso es reutilizable: podría conectarse a
+    otra interfaz sin cambiar una línea.</div>
+    <p><strong>Se conecta con:</strong> usa a <code>funciones.py</code> (le pide la función y su
+    dominio) y es llamado por <code>app.py</code> (que le pide los resultados).</p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ====================== validacion.py ====================== -->
+  <h2><span class="n">4</span>motor/validacion.py — el portero</h2>
+  <div class="archivo">
+    <span class="ruta">backend/motor/validacion.py</span>
+    <p class="papel">Para qué sirve: <strong>revisa y limpia</strong> lo que escribe el usuario
+    antes de que llegue a la matemática. Es la red de seguridad del proyecto.</p>
+
+    <p>El usuario puede equivocarse: dejar una casilla vacía, escribir “hola” donde va un número,
+    o poner un intervalo al revés. Este archivo se encarga de que <strong>nada de eso rompa el
+    programa</strong>.</p>
+
+    <div class="analogia">es el portero de la discoteca. Revisa a cada dato en la entrada: al que
+    viene mal vestido (un texto donde iba un número) lo corrige o lo manda de vuelta, para que
+    adentro todo funcione en orden.</div>
+
+    <h3>Las dos herramientas que ofrece</h3>
+    <ul>
+      <li><code class="func-def">a_numero(valor, defecto)</code> → intenta convertir el dato a número.
+      Si viene vacío o es texto, usa un <strong>valor por defecto</strong> en vez de reventar. Así se
+      cumple el requisito de “no permitir valores alfanuméricos donde van números”.</li>
+      <li><code class="func-def">validar_parametros(datos)</code> → recibe todo el pedido crudo y
+      devuelve una versión <strong>limpia y segura</strong>. Aplica los valores por defecto
+      (<code>a=1, b=1, c=0, d=0</code>), revisa que la función exista, valida la base de la
+      exponencial, corrige el intervalo si está al revés (x_min ≥ x_max) y garantiza mínimo 5 puntos
+      en la tabla.</li>
+    </ul>
+    <div class="nota"><strong>Dos niveles de respuesta:</strong> los errores leves se corrigen solos
+    (con valores por defecto); los graves de verdad —como elegir una función que no existe— lanzan un
+    aviso que <code>app.py</code> convierte en un mensaje de error limpio para el usuario.</div>
+    <p><strong>Se conecta con:</strong> usa a <code>funciones.py</code> (para confirmar que la función
+    existe) y es llamado por <code>app.py</code> como <strong>primer paso</strong>, antes de calcular
+    nada.</p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ====================== El recorrido completo ====================== -->
+  <h2><span class="n">5</span>Cómo se conecta todo: un pedido de principio a fin</h2>
+  <p class="lead">Esto es lo que pasa, paso a paso, desde que el usuario mueve un parámetro hasta que
+  ve la gráfica nueva:</p>
+
+  <ol class="flujo">
+    <li>El usuario, en la <strong>página web</strong>, elige una función y pone <code>a, b, c, d</code>.
+    El navegador manda esos datos a <code>POST /api/graficar</code>.</li>
+    <li><strong>app.py</strong> recibe el pedido y, antes que nada, se lo pasa al portero:
+    <code>validacion.validar_parametros(...)</code>.</li>
+    <li><strong>validacion.py</strong> limpia los datos (números válidos, defaults, intervalo
+    coherente) y, de paso, le pregunta a <strong>funciones.py</strong> si la función elegida existe.
+    Devuelve un paquete limpio.</li>
+    <li>Con los datos limpios, <strong>app.py</strong> llama al cocinero
+    <strong>transformaciones.py</strong> cuatro veces: curvas (<code>muestrear</code>), tabla
+    (<code>tabla_puntos</code>), explicación (<code>resumen_interpretativo</code>) y fórmula
+    (<code>formula_g</code>).</li>
+    <li><strong>transformaciones.py</strong> toma la función base desde <strong>funciones.py</strong>,
+    aplica <code>g(x) = a·f(b(x − c)) + d</code> y devuelve todos los resultados ya calculados.</li>
+    <li><strong>app.py</strong> junta todo en un <strong>JSON</strong> y se lo devuelve al navegador.</li>
+    <li>El <strong>frontend</strong> recibe ese JSON y dibuja: las dos curvas, la tabla, el resumen y
+    la fórmula. <em>El navegador no calculó nada: solo pintó la respuesta de Python.</em></li>
+  </ol>
+
+  <div class="intro">
+    <h3>Las tres ideas para recordar</h3>
+    <ul>
+      <li><strong>Separación de tareas:</strong> cada archivo hace una sola cosa (servir, validar,
+      guardar funciones, calcular). Eso es la “estructura modular” del enunciado.</li>
+      <li><strong>Python piensa, la web muestra:</strong> toda la matemática está en Python; el
+      frontend solo pide y dibuja. Por eso se cumple el requisito de “hecho en Python” aun siendo
+      una página web.</li>
+      <li><strong>A prueba de errores:</strong> el programa no se cae con datos malos; los corrige o
+      avisa con claridad.</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center; margin-top:28px; padding:18px; background:#111318; color:#fff; border-radius:14px;">
+    <strong>Backend en Python (Flask)</strong> &nbsp;·&nbsp; 5 archivos, 1 trabajo cada uno<br>
+    g(x) = a · f( b (x − c) ) + d
+  </div>
+
+</body>
+</html>

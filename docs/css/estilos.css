@@ -165,6 +165,31 @@ button:active { transform: translateY(1px) scale(.99); }
 .lienzo-wrap { position: relative; height: 450px; }
 #lienzo { width: 100%; height: 100% !important; }
 
+/* Fórmula lista para pegar en GeoGebra */
+.geogebra {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 16px; padding: 12px 14px;
+  background: #0d0d10; border: 1px solid var(--borde); border-radius: 10px;
+}
+.gg-rotulo {
+  font-family: var(--display); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--texto-2);
+}
+.gg-code {
+  flex: 1; min-width: 160px;
+  font-family: "Consolas", "SF Mono", monospace; font-size: 13.5px;
+  color: var(--texto); background: transparent; padding: 2px 0;
+  user-select: all; word-break: break-all;
+}
+.gg-copy {
+  flex: 0 0 auto; padding: 7px 14px; border-radius: 8px;
+  border: 1px solid var(--borde-glow); background: var(--panel-2); color: var(--texto);
+  font-family: var(--sans); font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.gg-copy:hover { background: #222228; border-color: var(--acento-2); }
+.gg-copy.ok { background: var(--acento); color: #0b0b0d; border-color: var(--acento); }
+
 /* ---------- Inferior ---------- */
 .inferior {
   max-width: 1180px; margin: 28px auto 0; padding: 0 28px;

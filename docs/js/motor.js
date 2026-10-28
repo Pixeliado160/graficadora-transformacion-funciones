@@ -152,6 +152,35 @@ function formulaG(clave, a, b, c, d, baseExp) {
   return `g(x) = ${pref}${cuerpo}${suf}`;
 }
 
+// ---------- Fórmula en sintaxis GeoGebra (copiar y pegar directo) ----------
+// Devuelve g(x) exactamente como se teclea en GeoGebra: con *, ^, abs(), sqrt().
+function formulaGeoGebra(clave, a, b, c, d, baseExp) {
+  // argumento interno u = b(x - c)
+  let u;
+  if (c === 0) u = b !== 1 ? `${g(b)}*x` : "x";
+  else {
+    const signo = c > 0 ? "-" : "+";
+    const nucleo = `(x ${signo} ${g(Math.abs(c))})`;
+    u = b !== 1 ? `${g(b)}*${nucleo}` : nucleo;
+  }
+  // Para potencias necesitamos u entre paréntesis; si u ya es (…) no duplicamos.
+  const uParen = u.startsWith("(") ? u : `(${u})`;
+  // cuerpo f(u) según la función, en sintaxis GeoGebra
+  const cuerpos = {
+    lineal: u,
+    cuadratica: `${uParen}^2`,
+    cubica: `${uParen}^3`,
+    valor_absoluto: `abs(${u})`,
+    raiz_cuadrada: `sqrt(${u})`,
+    exponencial: `${g(baseExp)}^(${u})`,
+  };
+  let expr = cuerpos[clave];
+  if (a !== 1) expr = `${g(a)}*${expr}`;
+  if (d > 0) expr = `${expr} + ${g(d)}`;
+  else if (d < 0) expr = `${expr} - ${g(Math.abs(d))}`;
+  return `g(x) = ${expr}`;
+}
+
 /* API local que imita la respuesta del backend Python */
 function calcular(datos) {
   const p = validarParametros(datos);
@@ -159,9 +188,11 @@ function calcular(datos) {
   const tabla = tablaPuntos(p.funcion, p.a, p.b, p.c, p.d, p.x_min, p.x_max, p.puntos_tabla, p.base_exp);
   const resumen = resumenInterpretativo(p.funcion, p.a, p.b, p.c, p.d, p.base_exp);
   const formula = formulaG(p.funcion, p.a, p.b, p.c, p.d, p.base_exp);
+  const geogebra = formulaGeoGebra(p.funcion, p.a, p.b, p.c, p.d, p.base_exp);
   const info = FUNCIONES_BASE[p.funcion];
   return {
     ok: true, funcion_nombre: info.nombre, formula_f: info.formula, formula_g: formula,
+    formula_geogebra: geogebra,
     serie_f: serieF, serie_g: serieG, tabla, resumen,
   };
 }

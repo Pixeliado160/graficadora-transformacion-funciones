@@ -50,6 +50,7 @@ function graficar() {
     pintarTabla(data.tabla);
     $("etq-f").textContent = `f(x) = ${data.formula_f.replace("f(x) = ", "")}`;
     $("etq-g").textContent = data.formula_g;
+    $("gg-formula").textContent = data.formula_geogebra;
   } catch (e) {
     mostrarError(e.message || "No se pudo calcular con esos valores.");
   }
@@ -177,6 +178,25 @@ function animarEntrada() {
 // Micro-feedback al pulsar Graficar
 $("btn-graficar").addEventListener("click", () => {
   if (!reduceMotion && window.gsap) gsap.fromTo("#btn-graficar", { scale: 0.96 }, { scale: 1, duration: 0.3, ease: "back.out(3)" });
+});
+
+// Copiar la fórmula de GeoGebra al portapapeles
+$("btn-copiar-gg").addEventListener("click", async () => {
+  const texto = $("gg-formula").textContent.replace(/^g\(x\)\s*=\s*/, "").trim();
+  const btn = $("btn-copiar-gg");
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch (e) {
+    // Respaldo para navegadores sin API de portapapeles
+    const ta = document.createElement("textarea");
+    ta.value = texto; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (_) {}
+    document.body.removeChild(ta);
+  }
+  const prev = btn.textContent;
+  btn.textContent = "¡Copiado!";
+  btn.classList.add("ok");
+  setTimeout(() => { btn.textContent = prev; btn.classList.remove("ok"); }, 1500);
 });
 
 cargarFunciones();
