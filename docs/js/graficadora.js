@@ -8,7 +8,7 @@
 
 const COLOR = {
   acento: "#e8e8ea",
-  grid: "rgba(141,141,150,.12)", borde: "#26262c",
+  grid: "rgba(141,141,150,.12)", eje: "rgba(210,210,218,.55)", borde: "#26262c",
   texto: "#f2f2f4", texto2: "#8d8d96",
 };
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -40,8 +40,25 @@ function graficar() {
 function dibujarGrafica(data) {
   const serie = data.serie.map((p) => ({ x: p[0], y: p[1] }));
 
+  // Límites X = intervalo exacto pedido (sin margen, como GeoGebra)
+  const xs = serie.map((p) => p.x);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+
+  // Límites Y: según los datos, pero SIEMPRE incluyendo el 0 (origen visible)
+  // y con un pequeño respiro arriba/abajo.
+  const ys = serie.map((p) => p.y).filter((y) => y !== null && Number.isFinite(y));
+  let yMin = 0, yMax = 0;
+  if (ys.length) { yMin = Math.min(0, ...ys); yMax = Math.max(0, ...ys); }
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  const resp = (yMax - yMin) * 0.08;
+  yMin -= resp; yMax += resp;
+
   if (grafico) {
     grafico.data.datasets[0].data = serie;
+    grafico.options.scales.x.min = xMin;
+    grafico.options.scales.x.max = xMax;
+    grafico.options.scales.y.min = yMin;
+    grafico.options.scales.y.max = yMax;
     grafico.update();
     return;
   }
@@ -51,8 +68,7 @@ function dibujarGrafica(data) {
     data: {
       datasets: [
         { label: "y", data: serie, borderColor: COLOR.acento,
-          borderWidth: 3, pointRadius: 0, tension: 0.18, spanGaps: false,
-          backgroundColor: "rgba(232,232,234,.05)", fill: true },
+          borderWidth: 2.5, pointRadius: 0, tension: 0, spanGaps: false, fill: false },
       ],
     },
     options: {
@@ -73,10 +89,37 @@ function dibujarGrafica(data) {
         },
       },
       scales: {
-        x: { type: "linear", grid: { color: COLOR.grid }, border: { color: COLOR.borde },
-             ticks: { color: COLOR.texto2, font: { family: "Inter", size: 11 } } },
-        y: { grid: { color: COLOR.grid }, border: { color: COLOR.borde },
-             ticks: { color: COLOR.texto2, font: { family: "Inter", size: 11 } } },
+        // Plano cartesiano estilo GeoGebra: ejes cruzados en el origen (0,0),
+        // la línea del cero resaltada, cuadrícula tenue a ambos lados.
+        x: {
+          type: "linear", position: "center",
+          min: xMin, max: xMax,
+          grid: {
+            color: (ctx) => (ctx.tick.value === 0 ? COLOR.eje : COLOR.grid),
+            lineWidth: (ctx) => (ctx.tick.value === 0 ? 1.6 : 1),
+          },
+          border: { display: false },
+          ticks: {
+            color: COLOR.texto2, font: { family: "Inter", size: 11 },
+            maxRotation: 0, autoSkipPadding: 14,
+            // Ocultar el "0" sobre el propio eje para no encimar números
+            callback: (v) => (v === 0 ? "" : v),
+          },
+        },
+        y: {
+          type: "linear", position: "center",
+          min: yMin, max: yMax,
+          grid: {
+            color: (ctx) => (ctx.tick.value === 0 ? COLOR.eje : COLOR.grid),
+            lineWidth: (ctx) => (ctx.tick.value === 0 ? 1.6 : 1),
+          },
+          border: { display: false },
+          ticks: {
+            color: COLOR.texto2, font: { family: "Inter", size: 11 },
+            autoSkipPadding: 12,
+            callback: (v) => (v === 0 ? "" : v),
+          },
+        },
       },
     },
   });
