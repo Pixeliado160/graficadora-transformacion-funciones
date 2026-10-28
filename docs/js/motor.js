@@ -1,235 +1,184 @@
 /* ==========================================================================
-   motor.js — Evaluador de expresiones estilo GeoGebra (demo web)
+   motor.js — Motor de Transformación de Funciones (demo web)
    --------------------------------------------------------------------------
-   El usuario escribe UNA función tal como en GeoGebra, por ejemplo:
-        2*(x-1)^2 + 3        sqrt(x-2)        0.5*abs(x)+2        2^x
-   y este motor la convierte en una función evaluable y en una tabla de
-   puntos, SIN usar eval (intérprete propio: tokenizador + parser Pratt).
+   Modelo EXACTO del enunciado de Canvas:
 
-   El proyecto "oficial" usa Python (Flask); esta copia web existe solo para
-   la demo pública de GitHub Pages y para comparar contra GeoGebra.
+        g(x) = a · f(b (x − c)) + d
+
+   El usuario:
+     1. Elige una FUNCIÓN MADRE f(x) de la lista permitida.
+     2. Da los coeficientes a, b, c, d.
+   El motor evalúa f(x) (original) y g(x) (transformada), arma la tabla
+   (x, f(x), g(x)) y describe en lenguaje natural cada transformación.
+
+   SIN eval. El proyecto "oficial" es Python (Flask); esta copia web existe
+   para la demo de GitHub Pages y para comparar contra GeoGebra.
    ========================================================================== */
 
-/* -------------------- 0. Normalización estilo GeoGebra -------------------- */
-// Acepta prefijos como "g(x)=", "y =", "f(x)=" y los descarta: solo interesa el lado derecho.
-function normalizarEntrada(entrada) {
-  let s = entrada.replace(/−/g, "-").replace(/·/g, "*").replace(/,/g, ".");
-  // nombre(x) =  ó  y =   (solo si hay un único '=')
-  const partes = s.split("=");
-  if (partes.length === 2) {
-    const izq = partes[0].trim();
-    if (/^[a-zA-Z]\w*(\s*\(\s*x\s*\))?$/.test(izq)) s = partes[1];
-  }
-  return s.trim();
-}
-
-/* -------------------- 1. Tokenizador -------------------- */
-function tokenizar(entrada) {
-  const s = entrada.replace(/−/g, "-").replace(/·/g, "*").replace(/\s+/g, "");
-  const tokens = [];
-  let i = 0;
-  const esDigito = (c) => c >= "0" && c <= "9";
-  const esLetra = (c) => /[a-zA-Z]/.test(c);
-
-  while (i < s.length) {
-    const c = s[i];
-    if (esDigito(c) || (c === "." && esDigito(s[i + 1]))) {
-      let num = "";
-      while (i < s.length && (esDigito(s[i]) || s[i] === ".")) num += s[i++];
-      tokens.push({ t: "num", v: parseFloat(num) });
-    } else if (esLetra(c)) {
-      let id = "";
-      while (i < s.length && (esLetra(s[i]) || esDigito(s[i]))) id += s[i++];
-      tokens.push({ t: "id", v: id.toLowerCase() });
-    } else if ("+-*/^()".includes(c)) {
-      tokens.push({ t: c });
-      i++;
-    } else {
-      throw new Error(`Carácter no válido: "${c}"`);
-    }
-  }
-  tokens.push({ t: "eof" });
-  return tokens;
-}
-
-/* -------------------- 2. Parser (Pratt) -------------------- */
-// Constantes y funciones permitidas (nombres de GeoGebra y comunes)
-const CONSTANTES = { pi: Math.PI, e: Math.E };
-const FUNCIONES_MAT = {
-  sqrt: Math.sqrt, abs: Math.abs,
-  sin: Math.sin, cos: Math.cos, tan: Math.tan,
-  asin: Math.asin, acos: Math.acos, atan: Math.atan,
-  ln: Math.log, log: Math.log10, exp: Math.exp,
-  floor: Math.floor, ceil: Math.ceil, round: Math.round,
-  sign: Math.sign, cbrt: Math.cbrt,
+/* -------------------- 1. Funciones madre f(x) permitidas -------------------- */
+/* Las seis del enunciado (2.1). 'base' es solo para la exponencial a^x.       */
+const FUNCIONES_MADRE = {
+  lineal:      { etiqueta: "Línea  f(x) = x",            latex: "x",        f: (x) => x },
+  cuadratica:  { etiqueta: "Cuadrática  f(x) = x²",      latex: "x^2",      f: (x) => x * x },
+  cubica:      { etiqueta: "Cúbica  f(x) = x³",          latex: "x^3",      f: (x) => x * x * x },
+  absoluto:    { etiqueta: "Valor absoluto  f(x) = |x|", latex: "|x|",      f: (x) => Math.abs(x) },
+  raiz:        { etiqueta: "Raíz cuadrada  f(x) = √x",   latex: "\\sqrt{x}", f: (x) => (x < 0 ? null : Math.sqrt(x)) },
+  exponencial: { etiqueta: "Exponencial  f(x) = aˣ",     latex: "base^x",   f: null /* usa base */ },
 };
 
-function parsear(tokens) {
-  let pos = 0;
-  const peek = () => tokens[pos];
-  const next = () => tokens[pos++];
-  const esperar = (t) => {
-    if (peek().t !== t) throw new Error(`Se esperaba "${t}"`);
-    return next();
-  };
-
-  // Gramática por niveles (de menor a mayor prioridad):
-  //   suma:   term (('+'|'-') term)*
-  //   term:   unario (('*'|'/') unario)*
-  //   unario: '-' unario | '+' unario | potencia
-  //   pot:    primario ('^' unario)?       (^ der-asociativo; -x^2 = -(x^2))
-  function parseExpr() { return parseSuma(); }
-
-  function parseSuma() {
-    let izq = parseTerm();
-    while (peek().t === "+" || peek().t === "-") {
-      const op = next().t;
-      izq = { op, l: izq, r: parseTerm() };
-    }
-    return izq;
+/* Devuelve la f(x) madre lista para evaluar (la exponencial necesita 'base'). */
+function construirMadre(clave, base) {
+  const def = FUNCIONES_MADRE[clave];
+  if (!def) throw new Error("Elige una función base válida.");
+  if (clave === "exponencial") {
+    const b = base;
+    if (!(b > 0) || b === 1) throw new Error("La base de la exponencial debe ser a > 0 y a ≠ 1.");
+    return (x) => Math.pow(b, x);
   }
-
-  // ¿El token actual puede iniciar un factor? -> habilita multiplicación implícita (2(x-1), 2x, (x+1)(x-1))
-  function iniciaFactor(t) {
-    return t === "num" || t === "id" || t === "(";
-  }
-
-  function parseTerm() {
-    let izq = parseUnario();
-    while (true) {
-      const t = peek().t;
-      if (t === "*" || t === "/") {
-        const op = next().t;
-        izq = { op, l: izq, r: parseUnario() };
-      } else if (iniciaFactor(t)) {
-        // multiplicación implícita estilo GeoGebra: 2(x-1), 2x, (x+1)(x-1)
-        izq = { op: "*", l: izq, r: parseUnario() };
-      } else break;
-    }
-    return izq;
-  }
-
-  function parseUnario() {
-    if (peek().t === "-") { next(); return { op: "neg", r: parseUnario() }; }
-    if (peek().t === "+") { next(); return parseUnario(); }
-    return parsePotencia();
-  }
-
-  function parsePotencia() {
-    const base = parsePrimario();
-    if (peek().t === "^") {
-      next();
-      return { op: "^", l: base, r: parseUnario() }; // permite 2^-x y x^2
-    }
-    return base;
-  }
-
-  function parsePrimario() {
-    const tk = peek();
-    if (tk.t === "num") { next(); return { num: tk.v }; }
-    if (tk.t === "(") {
-      next(); const e = parseExpr(1); esperar(")"); return e;
-    }
-    if (tk.t === "id") {
-      next();
-      // ¿llamada a función?  nombre(...)  — solo si el nombre es una función conocida.
-      // Si fuera x( o pi(, es multiplicación implícita: lo resuelve parseTerm, no aquí.
-      if (peek().t === "(" && FUNCIONES_MAT[tk.v]) {
-        next();
-        const arg = parseExpr(1);
-        esperar(")");
-        return { fn: tk.v, arg };
-      }
-      if (tk.v === "x") return { varx: true };
-      if (tk.v in CONSTANTES) return { num: CONSTANTES[tk.v] };
-      if (FUNCIONES_MAT[tk.v]) throw new Error(`La función "${tk.v}" necesita paréntesis, p. ej. ${tk.v}(x).`);
-      throw new Error(`Símbolo desconocido: "${tk.v}" (use x, o funciones como sqrt, abs…)`);
-    }
-    throw new Error("Expresión incompleta.");
-  }
-
-  const arbol = parseExpr(1);
-  esperar("eof");
-  return arbol;
+  return def.f;
 }
 
-/* -------------------- 3. Evaluación del árbol -------------------- */
-function evalNodo(n, x) {
-  if ("num" in n) return n.num;
-  if ("varx" in n) return x;
-  if ("fn" in n) return FUNCIONES_MAT[n.fn](evalNodo(n.arg, x));
-  if (n.op === "neg") return -evalNodo(n.r, x);
-  const l = evalNodo(n.l, x), r = evalNodo(n.r, x);
-  switch (n.op) {
-    case "+": return l + r;
-    case "-": return l - r;
-    case "*": return l * r;
-    case "/": return l / r;
-    case "^": return Math.pow(l, r);
-  }
-  throw new Error("Operación no soportada.");
-}
-
-/* Compila una expresión de texto a una función f(x). Lanza Error si es inválida. */
-function compilar(expr) {
-  if (!expr || !expr.trim()) throw new Error("Escribe una función, por ejemplo: 2*(x-1)^2+3");
-  const limpia = normalizarEntrada(expr);
-  if (!limpia) throw new Error("Escribe una función, por ejemplo: 2*(x-1)^2+3");
-  const arbol = parsear(tokenizar(limpia));
+/* -------------------- 2. Modelo de transformación g(x) = a·f(b(x−c))+d ------ */
+function construirTransformada(fMadre, a, b, c, d) {
   return (x) => {
-    const y = evalNodo(arbol, x);
-    return Number.isFinite(y) ? y : null; // fuera de dominio / indefinido -> hueco
+    const u = b * (x - c);          // argumento interno: b(x − c)
+    const fu = fMadre(u);           // f(b(x − c))  — puede ser null (fuera de dominio)
+    if (fu === null || fu === undefined || !Number.isFinite(fu)) return null;
+    const y = a * fu + d;           // a·f(…) + d
+    return Number.isFinite(y) ? y : null;
   };
 }
 
-/* -------------------- 4. Muestreo y tabla (igual criterio que antes) -------------------- */
-function muestrear(f, xMin, xMax, n) {
+/* -------------------- 3. Resumen interpretativo (lenguaje natural) ---------- */
+/* Describe, parámetro por parámetro, lo que hace la transformación (req. 2.3). */
+function describirTransformaciones(a, b, c, d) {
+  const f = [];
+
+  // --- a: factor vertical / reflexión en X ---
+  const absA = Math.abs(a);
+  if (a < 0) f.push(`Reflexión respecto al eje X (porque a = ${a} es negativo).`);
+  if (absA > 1)      f.push(`Estiramiento vertical por un factor de ${absA}.`);
+  else if (absA < 1 && absA > 0) f.push(`Compresión vertical por un factor de ${absA}.`);
+  if (a === 0)       f.push(`a = 0 aplana la función a la recta y = ${d}.`);
+
+  // --- b: factor horizontal / reflexión en Y ---
+  const absB = Math.abs(b);
+  if (b < 0) f.push(`Reflexión respecto al eje Y (porque b = ${b} es negativo).`);
+  if (absB > 1)      f.push(`Compresión horizontal por un factor de 1/${absB}.`);
+  else if (absB < 1 && absB > 0) f.push(`Estiramiento horizontal por un factor de 1/${absB}.`);
+
+  // --- c: desplazamiento horizontal ---
+  if (c > 0)      f.push(`Traslación horizontal: ${c} unidad(es) hacia la derecha.`);
+  else if (c < 0) f.push(`Traslación horizontal: ${Math.abs(c)} unidad(es) hacia la izquierda.`);
+
+  // --- d: desplazamiento vertical ---
+  if (d > 0)      f.push(`Traslación vertical: ${d} unidad(es) hacia arriba.`);
+  else if (d < 0) f.push(`Traslación vertical: ${Math.abs(d)} unidad(es) hacia abajo.`);
+
+  if (f.length === 0) f.push("Sin transformación: g(x) coincide con la función base f(x).");
+  return f;
+}
+
+/* Arma el texto g(x) = … para mostrar en la leyenda (solo informativo).
+   'plantillaMadre' ya viene legible: "x", "x²", "x³", "|x|", "√x" o "2^x". */
+function expresionG(plantillaMadre, a, b, c, d) {
+  const neg = (n) => String(n).replace("-", "−");  // guión → signo menos tipográfico
+  // Argumento interno b(x − c) escrito de forma legible.
+  let arg;
+  if (b === 1 && c === 0) arg = "x";
+  else {
+    const parteC = c === 0 ? "x" : (c > 0 ? `x − ${c}` : `x + ${Math.abs(c)}`);
+    // Si hay b≠1, va entre paréntesis: b(x−c). Si b=1 pero hay c, también: (x−c).
+    arg = b === 1 ? `(${parteC})` : `${neg(b)}(${parteC})`;
+  }
+  // Sustituir la 'x' de la plantilla por el argumento (incluye |x|, √x, x², 2^x).
+  let fArg = plantillaMadre.replace(/x/g, arg);
+  // Envoltura: a · f(arg) + d
+  let s = "";
+  if (a === 1) s = fArg;
+  else if (a === -1) s = `−${fArg}`;
+  else s = `${neg(a)}·${fArg}`;
+  if (d > 0) s += ` + ${d}`;
+  else if (d < 0) s += ` − ${Math.abs(d)}`;
+  return s;
+}
+
+/* -------------------- 4. Validación de parámetros -------------------- */
+function aNumero(valor, defecto) {
+  if (valor === null || valor === undefined || valor === "") return defecto;
+  const n = parseFloat(String(valor).replace(",", "."));
+  return Number.isNaN(n) ? defecto : n;
+}
+
+/* -------------------- 5. Muestreo y tabla -------------------- */
+function muestrear(fn, xMin, xMax, n) {
   if (n < 2) n = 2;
   const paso = (xMax - xMin) / (n - 1);
   const serie = [];
   for (let i = 0; i < n; i++) {
     const x = xMin + i * paso;
     let y;
-    try { y = f(x); } catch (_) { y = null; }
+    try { y = fn(x); } catch (_) { y = null; }
     serie.push([x, y === null || !Number.isFinite(y) ? null : y]);
   }
   return serie;
 }
 
-function tablaPuntos(f, xMin, xMax, cantidad) {
-  if (cantidad < 5) cantidad = 5;
+function tablaPuntos(fMadre, gTrans, xMin, xMax, cantidad) {
+  if (cantidad < 5) cantidad = 5;                 // enunciado: al menos 5 puntos
   const paso = (xMax - xMin) / (cantidad - 1);
-  const r4 = (v) => (v === null ? null : Math.round(v * 10000) / 10000);
+  const r4 = (v) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 10000) / 10000);
   const filas = [];
   for (let i = 0; i < cantidad; i++) {
     const x = xMin + i * paso;
-    let y;
-    try { y = f(x); } catch (_) { y = null; }
-    if (y !== null && !Number.isFinite(y)) y = null;
-    filas.push({ x: r4(x), y: r4(y) });
+    let fx, gx;
+    try { fx = fMadre(x); } catch (_) { fx = null; }
+    try { gx = gTrans(x); } catch (_) { gx = null; }
+    filas.push({ x: r4(x), fx: r4(fx), gx: r4(gx) });
   }
   return filas;
 }
 
-/* -------------------- 5. Validación de parámetros de la interfaz -------------------- */
-function aNumero(valor, defecto) {
-  if (valor === null || valor === undefined || valor === "") return defecto;
-  const n = parseFloat(valor);
-  return Number.isNaN(n) ? defecto : n;
-}
-
-/* API local: recibe { expr, x_min, x_max, puntos } y devuelve lo que pinta la web */
+/* -------------------- 6. API local -------------------- */
+/* Recibe { funcion, base, a, b, c, d, x_min, x_max, puntos } y devuelve todo
+   lo que la interfaz necesita pintar (gráfica, tabla, resumen).            */
 function calcular(datos) {
-  const f = compilar(datos.expr);
+  const clave = datos.funcion;
+  const base  = aNumero(datos.base, 2);
+
+  // Valores por defecto del enunciado: a=1, b=1, c=0, d=0
+  const a = aNumero(datos.a, 1);
+  const b = aNumero(datos.b, 1);
+  const c = aNumero(datos.c, 0);
+  const d = aNumero(datos.d, 0);
+
+  const fMadre = construirMadre(clave, base);
+  const gTrans = construirTransformada(fMadre, a, b, c, d);
+
   let xMin = aNumero(datos.x_min, -10), xMax = aNumero(datos.x_max, 10);
   if (xMin >= xMax) { xMin = -10; xMax = 10; }
   let puntos = Math.trunc(aNumero(datos.puntos, 9));
   if (puntos < 5) puntos = 5;
 
+  const def = FUNCIONES_MADRE[clave];
+  // Plantilla legible de la madre, con 'x' intacta para sustituir el argumento.
+  const plantillaMadre = clave === "exponencial"
+    ? `${base}^x`
+    : def.latex.replace(/\\sqrt\{x\}/, "√x").replace("^2", "²").replace("^3", "³");
+
   return {
     ok: true,
-    expr: normalizarEntrada(datos.expr),
-    serie: muestrear(f, xMin, xMax, 400),
-    tabla: tablaPuntos(f, xMin, xMax, puntos),
+    a, b, c, d,
+    etiquetaF: `f(x) = ${plantillaMadre}`,
+    etiquetaG: `g(x) = ${expresionG(plantillaMadre, a, b, c, d)}`,
+    serieF: muestrear(fMadre, xMin, xMax, 400),
+    serieG: muestrear(gTrans, xMin, xMax, 400),
+    tabla: tablaPuntos(fMadre, gTrans, xMin, xMax, puntos),
+    transformaciones: describirTransformaciones(a, b, c, d),
   };
+}
+
+/* Exportación para pruebas con Node (ignorado en el navegador). */
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { FUNCIONES_MADRE, construirMadre, construirTransformada, describirTransformaciones, calcular };
 }
