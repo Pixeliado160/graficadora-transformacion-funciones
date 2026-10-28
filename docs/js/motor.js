@@ -10,6 +10,19 @@
    la demo pública de GitHub Pages y para comparar contra GeoGebra.
    ========================================================================== */
 
+/* -------------------- 0. Normalización estilo GeoGebra -------------------- */
+// Acepta prefijos como "g(x)=", "y =", "f(x)=" y los descarta: solo interesa el lado derecho.
+function normalizarEntrada(entrada) {
+  let s = entrada.replace(/−/g, "-").replace(/·/g, "*").replace(/,/g, ".");
+  // nombre(x) =  ó  y =   (solo si hay un único '=')
+  const partes = s.split("=");
+  if (partes.length === 2) {
+    const izq = partes[0].trim();
+    if (/^[a-zA-Z]\w*(\s*\(\s*x\s*\))?$/.test(izq)) s = partes[1];
+  }
+  return s.trim();
+}
+
 /* -------------------- 1. Tokenizador -------------------- */
 function tokenizar(entrada) {
   const s = entrada.replace(/−/g, "-").replace(/·/g, "*").replace(/\s+/g, "");
@@ -28,7 +41,7 @@ function tokenizar(entrada) {
       let id = "";
       while (i < s.length && (esLetra(s[i]) || esDigito(s[i]))) id += s[i++];
       tokens.push({ t: "id", v: id.toLowerCase() });
-    } else if ("+-*/^(),".includes(c)) {
+    } else if ("+-*/^()".includes(c)) {
       tokens.push({ t: c });
       i++;
     } else {
@@ -76,11 +89,22 @@ function parsear(tokens) {
     return izq;
   }
 
+  // ¿El token actual puede iniciar un factor? -> habilita multiplicación implícita (2(x-1), 2x, (x+1)(x-1))
+  function iniciaFactor(t) {
+    return t === "num" || t === "id" || t === "(";
+  }
+
   function parseTerm() {
     let izq = parseUnario();
-    while (peek().t === "*" || peek().t === "/") {
-      const op = next().t;
-      izq = { op, l: izq, r: parseUnario() };
+    while (true) {
+      const t = peek().t;
+      if (t === "*" || t === "/") {
+        const op = next().t;
+        izq = { op, l: izq, r: parseUnario() };
+      } else if (iniciaFactor(t)) {
+        // multiplicación implícita estilo GeoGebra: 2(x-1), 2x, (x+1)(x-1)
+        izq = { op: "*", l: izq, r: parseUnario() };
+      } else break;
     }
     return izq;
   }
@@ -108,16 +132,17 @@ function parsear(tokens) {
     }
     if (tk.t === "id") {
       next();
-      // ¿llamada a función?  nombre(...)
-      if (peek().t === "(") {
+      // ¿llamada a función?  nombre(...)  — solo si el nombre es una función conocida.
+      // Si fuera x( o pi(, es multiplicación implícita: lo resuelve parseTerm, no aquí.
+      if (peek().t === "(" && FUNCIONES_MAT[tk.v]) {
         next();
         const arg = parseExpr(1);
         esperar(")");
-        if (!FUNCIONES_MAT[tk.v]) throw new Error(`Función desconocida: "${tk.v}"`);
         return { fn: tk.v, arg };
       }
       if (tk.v === "x") return { varx: true };
       if (tk.v in CONSTANTES) return { num: CONSTANTES[tk.v] };
+      if (FUNCIONES_MAT[tk.v]) throw new Error(`La función "${tk.v}" necesita paréntesis, p. ej. ${tk.v}(x).`);
       throw new Error(`Símbolo desconocido: "${tk.v}" (use x, o funciones como sqrt, abs…)`);
     }
     throw new Error("Expresión incompleta.");
@@ -148,7 +173,9 @@ function evalNodo(n, x) {
 /* Compila una expresión de texto a una función f(x). Lanza Error si es inválida. */
 function compilar(expr) {
   if (!expr || !expr.trim()) throw new Error("Escribe una función, por ejemplo: 2*(x-1)^2+3");
-  const arbol = parsear(tokenizar(expr));
+  const limpia = normalizarEntrada(expr);
+  if (!limpia) throw new Error("Escribe una función, por ejemplo: 2*(x-1)^2+3");
+  const arbol = parsear(tokenizar(limpia));
   return (x) => {
     const y = evalNodo(arbol, x);
     return Number.isFinite(y) ? y : null; // fuera de dominio / indefinido -> hueco
@@ -201,7 +228,7 @@ function calcular(datos) {
 
   return {
     ok: true,
-    expr: datos.expr.trim(),
+    expr: normalizarEntrada(datos.expr),
     serie: muestrear(f, xMin, xMax, 400),
     tabla: tablaPuntos(f, xMin, xMax, puntos),
   };
